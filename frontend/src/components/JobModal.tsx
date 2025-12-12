@@ -1,0 +1,140 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { apiRequest, getErrorMessage } from "@/lib/api";
+import type { Job } from "@/lib/types";
+import { useAuthStore } from "@/store/auth";
+import { ApplicationForm } from "./ApplicationForm";
+import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
+
+export function JobModal({
+  jobId,
+  onClose,
+}: {
+  jobId: number;
+  onClose: () => void;
+}) {
+  const { token, role } = useAuthStore();
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useLockBodyScroll(true);
+
+  useEffect(() => {
+    let alive = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    setError(null);
+    apiRequest<{ data: Job }>(`jobs/${jobId}`)
+      .then((res) => alive && setJob(res.data))
+      .catch((e: unknown) => alive && setError(getErrorMessage(e, "Not found")))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [jobId]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  const handleApply = async ({
+    message,
+    resume,
+  }: {
+    message: string;
+    resume?: File | null;
+  }) => {
+    if (!token) {
+      onClose();
+      window.location.href = "/login";
+      return;
+    }
+
+    const form = new FormData();
+    form.append("message", message);
+    if (resume) form.append("resume", resume);
+
+    await apiRequest(`jobs/${jobId}/apply`, {
+      method: "POST",
+      body: form,
+      token,
+      isFormData: true,
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
+              {job?.title ?? "Job Details"}
+            </h2>
+            {job && (
+              <p className="mt-1 text-sm text-zinc-600">
+                {job.location ?? "Remote / Flexible"}
+                {job.is_remote ? " • Remote" : ""}
+                {job.salary_range ? ` • ${job.salary_range}` : ""}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {loading && <p className="mt-4 text-sm text-zinc-600">Loading…</p>}
+        {error && (
+          <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {job && (
+          <div className="mt-4 space-y-6">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+              <p className="whitespace-pre-line leading-relaxed text-zinc-800">
+                {job.description}
+              </p>
+            </div>
+
+            {role === "applicant" && (
+              <div className="rounded-xl border border-zinc-200 bg-white p-4">
+                <h3 className="text-lg font-semibold text-zinc-900">
+                  Apply to this job
+                </h3>
+                <div className="mt-3">
+                  <ApplicationForm onSubmit={handleApply} />
+                </div>
+              </div>
+            )}
+
+            {!token && (
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700">
+                Please login as an applicant to apply.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

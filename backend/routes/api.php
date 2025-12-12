@@ -26,8 +26,8 @@ Route::middleware(['auth:sanctum', 'role:applicant'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(function () {
     Route::get('jobs', [EmployerJobController::class, 'index']);
     Route::post('jobs', [EmployerJobController::class, 'store']);
+    Route::get('jobs/{job}', [EmployerJobController::class, 'show']);
     Route::patch('jobs/{job}', [EmployerJobController::class, 'update']);
     Route::delete('jobs/{job}', [EmployerJobController::class, 'destroy']);
     Route::get('jobs/{job}/applications', [EmployerJobController::class, 'applications']);
 });
-

@@ -42,6 +42,13 @@ class EmployerJobController extends Controller
             ->setStatusCode(201);
     }
 
+    public function show(Job $job)
+    {
+        $this->authorize('update', $job);
+
+        return new JobResource($job);
+    }
+
     public function update(JobUpdateRequest $request, Job $job)
     {
         $this->authorize('update', $job);
