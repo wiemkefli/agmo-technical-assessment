@@ -14,7 +14,10 @@ class JobResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'location' => $this->location,
-            'salary_range' => $this->salary_range,
+            'salary_min' => $this->salary_min,
+            'salary_max' => $this->salary_max,
+            'salary_currency' => $this->salary_currency,
+            'salary_period' => $this->salary_period,
             'is_remote' => (bool) $this->is_remote,
             'status' => $this->status,
             'published_at' => $this->published_at,
@@ -24,4 +27,3 @@ class JobResource extends JsonResource
         ];
     }
 }
-

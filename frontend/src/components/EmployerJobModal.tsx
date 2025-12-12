@@ -6,6 +6,7 @@ import type { Job, JobFormPayload } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { JobForm } from "@/components/JobForm";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
+import { formatSalary } from "@/lib/salary";
 
 export function EmployerJobModal({
   mode,
@@ -106,7 +107,7 @@ export function EmployerJobModal({
               <p className="mt-1 text-sm text-zinc-600">
                 {job.location ?? "Remote / Flexible"}
                 {job.is_remote ? "  Remote" : ""}
-                {job.salary_range ? `  ${job.salary_range}` : ""}
+                {formatSalary(job) ? `  ${formatSalary(job)}` : ""}
               </p>
             )}
           </div>

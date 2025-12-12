@@ -17,7 +17,10 @@ export interface Job {
   title: string;
   description: string;
   location: string | null;
-  salary_range: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_currency: string | null;
+  salary_period: "month" | "year" | null;
   is_remote: boolean;
   status: JobStatus;
   published_at: string | null;
@@ -58,7 +61,10 @@ export interface JobFormPayload {
   title: string;
   description: string;
   location: string | null;
-  salary_range: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_currency: string | null;
+  salary_period: "month" | "year" | null;
   is_remote: boolean;
   status: JobStatus;
 }

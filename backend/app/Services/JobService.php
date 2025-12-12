@@ -39,7 +39,10 @@ class JobService
             'title',
             'description',
             'location',
-            'salary_range',
+            'salary_min',
+            'salary_max',
+            'salary_currency',
+            'salary_period',
             'is_remote',
             'status',
         ]);
@@ -57,4 +60,3 @@ class JobService
         return $payload;
     }
 }
-

@@ -12,7 +12,7 @@ This is a step-by-step build plan you can hand to a coding agent (Codex) to impl
 - **Jobs**
   - Employer: create/edit/delete/view *own* jobs
   - Applicant: browse **published** jobs only
-  - Fields: `title`, `description`, `location`, `salary_range`, `is_remote`, `status`, `published_at` *(auto-set when published)*
+  - Fields: `title`, `description`, `location`, `salary_min`, `salary_max`, `salary_currency`, `salary_period`, `is_remote`, `status`, `published_at` *(auto-set when published)*
 - **Applications**
   - Applicant applies to a job with a short message
   - Employer can view applicants for their own job(s)
@@ -84,7 +84,10 @@ repo/
 - `title` (string)
 - `description` (text)
 - `location` (string, nullable)
-- `salary_range` (string, nullable) *(simple)*
+- `salary_min` (unsigned integer, nullable)
+- `salary_max` (unsigned integer, nullable)
+- `salary_currency` (string(3), nullable) *(e.g. `MYR`, `USD`)*
+- `salary_period` (string, nullable) *(e.g. `month` | `year`)*
 - `is_remote` (boolean, default false)
 - `status` (string: `draft` | `published`, default `draft`)
 - `published_at` (timestamp, nullable) *(set when status becomes `published`)*

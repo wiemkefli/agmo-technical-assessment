@@ -15,7 +15,10 @@ class Job extends Model
         'title',
         'description',
         'location',
-        'salary_range',
+        'salary_min',
+        'salary_max',
+        'salary_currency',
+        'salary_period',
         'is_remote',
         'status',
         'published_at',
@@ -26,6 +29,8 @@ class Job extends Model
         return [
             'is_remote' => 'boolean',
             'published_at' => 'datetime',
+            'salary_min' => 'integer',
+            'salary_max' => 'integer',
         ];
     }
 
@@ -39,4 +44,3 @@ class Job extends Model
         return $this->hasMany(Application::class);
     }
 }
-

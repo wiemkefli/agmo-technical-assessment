@@ -13,18 +13,20 @@ class JobFactory extends Factory
     public function definition(): array
     {
         $status = fake()->randomElement(['draft', 'published']);
+        $withSalary = fake()->boolean(60);
+
+        $salaryMin = $withSalary ? fake()->numberBetween(2000, 12000) : null;
+        $salaryMax = $withSalary ? $salaryMin + fake()->numberBetween(500, 8000) : null;
 
         return [
             'employer_id' => User::factory()->employer(),
             'title' => fake()->jobTitle(),
             'description' => fake()->paragraphs(3, true),
             'location' => fake()->optional()->city(),
-            'salary_range' => fake()->optional()->randomElement([
-                '3000-5000 MYR',
-                '5000-8000 MYR',
-                '8000-12000 MYR',
-                'Negotiable',
-            ]),
+            'salary_min' => $salaryMin,
+            'salary_max' => $salaryMax,
+            'salary_currency' => $withSalary ? 'MYR' : null,
+            'salary_period' => $withSalary ? fake()->randomElement(['month', 'year']) : null,
             'is_remote' => fake()->boolean(30),
             'status' => $status,
             'published_at' => $status === 'published' ? now() : null,
@@ -47,4 +49,3 @@ class JobFactory extends Factory
         ]);
     }
 }
-

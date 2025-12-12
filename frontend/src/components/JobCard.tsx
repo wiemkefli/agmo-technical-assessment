@@ -1,4 +1,5 @@
 import type { Job } from "@/lib/types";
+import { formatSalary } from "@/lib/salary";
 
 export function JobCard({
   job,
@@ -11,6 +12,8 @@ export function JobCard({
     job.status === "published"
       ? "bg-emerald-50 text-emerald-700"
       : "bg-amber-50 text-amber-700";
+
+  const salary = formatSalary(job);
 
   return (
     <div className="group rounded-xl border border-zinc-200/70 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -30,9 +33,7 @@ export function JobCard({
             {job.location ?? "Remote / Flexible"}
             {job.is_remote ? "  Remote" : ""}
           </p>
-          {job.salary_range && (
-            <p className="mt-1 text-sm text-zinc-700">{job.salary_range}</p>
-          )}
+          {salary && <p className="mt-1 text-sm text-zinc-700">{salary}</p>}
         </div>
         <span className={`rounded-full px-2 py-1 text-xs font-medium ${badgeClass}`}>
           {job.status}

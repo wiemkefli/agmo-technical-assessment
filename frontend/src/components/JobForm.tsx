@@ -12,7 +12,10 @@ export function JobForm({
     title: string;
     description: string;
     location: string | null;
-    salary_range: string | null;
+    salary_min: number | null;
+    salary_max: number | null;
+    salary_currency: string | null;
+    salary_period: "month" | "year" | null;
     is_remote: boolean;
     status: JobStatus;
   };
@@ -21,10 +24,28 @@ export function JobForm({
 }) {
   const inputClass =
     "mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
+
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [location, setLocation] = useState(initial?.location ?? "");
-  const [salaryRange, setSalaryRange] = useState(initial?.salary_range ?? "");
+
+  const [salaryMin, setSalaryMin] = useState(
+    initial?.salary_min !== null && initial?.salary_min !== undefined
+      ? String(initial.salary_min)
+      : "",
+  );
+  const [salaryMax, setSalaryMax] = useState(
+    initial?.salary_max !== null && initial?.salary_max !== undefined
+      ? String(initial.salary_max)
+      : "",
+  );
+  const [salaryCurrency, setSalaryCurrency] = useState(
+    initial?.salary_currency ?? "MYR",
+  );
+  const [salaryPeriod, setSalaryPeriod] = useState<"month" | "year">(
+    initial?.salary_period ?? "month",
+  );
+
   const [isRemote, setIsRemote] = useState(initial?.is_remote ?? false);
   const [status, setStatus] = useState<JobStatus>(initial?.status ?? "draft");
   const [error, setError] = useState<string | null>(null);
@@ -35,11 +56,31 @@ export function JobForm({
     setSaving(true);
     setError(null);
     try {
+      const parsedMin =
+        salaryMin.trim() === "" ? null : Number.parseInt(salaryMin, 10);
+      const parsedMax =
+        salaryMax.trim() === "" ? null : Number.parseInt(salaryMax, 10);
+
+      if (parsedMin !== null && !Number.isFinite(parsedMin)) {
+        throw new Error("Salary min must be a number");
+      }
+      if (parsedMax !== null && !Number.isFinite(parsedMax)) {
+        throw new Error("Salary max must be a number");
+      }
+      if (parsedMin !== null && parsedMax !== null && parsedMax < parsedMin) {
+        throw new Error("Salary max must be greater than salary min");
+      }
+
+      const hasSalary = parsedMin !== null || parsedMax !== null;
+
       await onSubmit({
         title,
         description,
         location: location || null,
-        salary_range: salaryRange || null,
+        salary_min: parsedMin,
+        salary_max: parsedMax,
+        salary_currency: hasSalary ? salaryCurrency : null,
+        salary_period: hasSalary ? salaryPeriod : null,
         is_remote: isRemote,
         status,
       });
@@ -86,12 +127,42 @@ export function JobForm({
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-zinc-800">Salary Range</label>
-          <input
-            className={inputClass}
-            value={salaryRange}
-            onChange={(e) => setSalaryRange(e.target.value)}
-          />
+          <label className="text-sm font-medium text-zinc-800">Salary</label>
+          <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <input
+              className={inputClass}
+              inputMode="numeric"
+              placeholder="Min"
+              value={salaryMin}
+              onChange={(e) => setSalaryMin(e.target.value)}
+            />
+            <input
+              className={inputClass}
+              inputMode="numeric"
+              placeholder="Max"
+              value={salaryMax}
+              onChange={(e) => setSalaryMax(e.target.value)}
+            />
+          </div>
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <select
+              className={inputClass}
+              value={salaryCurrency}
+              onChange={(e) => setSalaryCurrency(e.target.value)}
+            >
+              <option value="MYR">MYR</option>
+              <option value="USD">USD</option>
+              <option value="SGD">SGD</option>
+            </select>
+            <select
+              className={inputClass}
+              value={salaryPeriod}
+              onChange={(e) => setSalaryPeriod(e.target.value as "month" | "year")}
+            >
+              <option value="month">Per month</option>
+              <option value="year">Per year</option>
+            </select>
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -125,3 +196,4 @@ export function JobForm({
     </form>
   );
 }
+

@@ -6,6 +6,7 @@ import { APIError, apiRequest, getErrorMessage } from "@/lib/api";
 import type { Application, Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "@/components/ApplicationForm";
+import { formatSalary } from "@/lib/salary";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -95,8 +96,8 @@ export default function JobDetailPage() {
           {job.location ?? "Remote / Flexible"}
           {job.is_remote ? " • Remote" : ""}
         </p>
-        {job.salary_range && (
-          <p className="mt-1 text-sm text-zinc-700">{job.salary_range}</p>
+        {formatSalary(job) && (
+          <p className="mt-1 text-sm text-zinc-700">{formatSalary(job)}</p>
         )}
         <p className="mt-4 whitespace-pre-line leading-relaxed text-zinc-800">
           {job.description}

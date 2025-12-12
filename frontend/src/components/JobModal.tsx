@@ -6,6 +6,7 @@ import type { Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "./ApplicationForm";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
+import { formatSalary } from "@/lib/salary";
 
 export function JobModal({
   jobId,
@@ -85,6 +86,8 @@ export function JobModal({
     }
   };
 
+  const salary = job ? formatSalary(job) : null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
@@ -105,7 +108,7 @@ export function JobModal({
               <p className="mt-1 text-sm text-zinc-600">
                 {job.location ?? "Remote / Flexible"}
                 {job.is_remote ? " • Remote" : ""}
-                {job.salary_range ? ` • ${job.salary_range}` : ""}
+                {salary ? ` • ${salary}` : ""}
               </p>
             )}
           </div>
@@ -118,7 +121,7 @@ export function JobModal({
           </button>
         </div>
 
-        {loading && <p className="mt-4 text-sm text-zinc-600">Loading…</p>}
+        {loading && <p className="mt-4 text-sm text-zinc-600">Loading.</p>}
         {error && (
           <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
@@ -163,3 +166,4 @@ export function JobModal({
     </div>
   );
 }
+
