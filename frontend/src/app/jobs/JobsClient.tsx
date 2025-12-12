@@ -8,6 +8,44 @@ import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
 import { useAuthStore } from "@/store/auth";
 
+type WorkArrangement = "any" | "remote" | "onsite";
+type Sort = "newest" | "oldest";
+
+type JobFilters = {
+  q: string;
+  location: string;
+  work_arrangement: WorkArrangement;
+  salary_min: string;
+  salary_max: string;
+  salary_currency: string;
+  salary_period: "" | "month" | "year";
+  sort: Sort;
+};
+
+function parseFiltersFromSearchParams(searchParams: { get: (key: string) => string | null }): JobFilters {
+  const urlIsRemote = searchParams.get("is_remote");
+  const work_arrangement: WorkArrangement =
+    urlIsRemote === "1" ? "remote" : urlIsRemote === "0" ? "onsite" : "any";
+
+  const sort = (searchParams.get("sort") as Sort) ?? "newest";
+  const safeSort: Sort = sort === "oldest" ? "oldest" : "newest";
+
+  const salaryPeriod = searchParams.get("salary_period");
+  const safePeriod: "" | "month" | "year" =
+    salaryPeriod === "month" || salaryPeriod === "year" ? salaryPeriod : "";
+
+  return {
+    q: searchParams.get("q") ?? "",
+    location: searchParams.get("location") ?? "",
+    work_arrangement,
+    salary_min: searchParams.get("salary_min") ?? "",
+    salary_max: searchParams.get("salary_max") ?? "",
+    salary_currency: searchParams.get("salary_currency") ?? "",
+    salary_period: safePeriod,
+    sort: safeSort,
+  };
+}
+
 export function JobsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,6 +62,14 @@ export function JobsClient() {
 
   const [pageState, setPageState] = useState(initialPage);
   const [perPageState, setPerPageState] = useState(initialPerPage);
+
+  const [filters, setFilters] = useState<JobFilters>(() =>
+    parseFiltersFromSearchParams(searchParams),
+  );
+  const [draft, setDraft] = useState<JobFilters>(() =>
+    parseFiltersFromSearchParams(searchParams),
+  );
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const [data, setData] = useState<PaginatedResponse<Job> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,19 +91,59 @@ export function JobsClient() {
   useEffect(() => {
     const nextPage = toPositiveInt(searchParams.get("page"), 1);
     const nextPerPage = toPositiveInt(searchParams.get("per_page"), 10);
+    const nextFilters = parseFiltersFromSearchParams(searchParams);
 
     // Sync local state from URL only when URL changes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPageState((prev) => (prev === nextPage ? prev : nextPage));
     setPerPageState((prev) => (prev === nextPerPage ? prev : nextPerPage));
+    setFilters((prev) =>
+      JSON.stringify(prev) === JSON.stringify(nextFilters) ? prev : nextFilters,
+    );
+    setDraft((prev) =>
+      JSON.stringify(prev) === JSON.stringify(nextFilters) ? prev : nextFilters,
+    );
   }, [searchParams]);
+
+  const buildQuery = ({
+    page,
+    per_page,
+    nextFilters,
+  }: {
+    page: number;
+    per_page: number;
+    nextFilters: JobFilters;
+  }) => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("per_page", String(per_page));
+
+    const q = nextFilters.q.trim();
+    const location = nextFilters.location.trim();
+
+    if (q) params.set("q", q);
+    if (location) params.set("location", location);
+
+    if (nextFilters.work_arrangement === "remote") params.set("is_remote", "1");
+    if (nextFilters.work_arrangement === "onsite") params.set("is_remote", "0");
+
+    if (nextFilters.salary_min.trim()) params.set("salary_min", nextFilters.salary_min.trim());
+    if (nextFilters.salary_max.trim()) params.set("salary_max", nextFilters.salary_max.trim());
+    if (nextFilters.salary_currency) params.set("salary_currency", nextFilters.salary_currency);
+    if (nextFilters.salary_period) params.set("salary_period", nextFilters.salary_period);
+
+    if (nextFilters.sort) params.set("sort", nextFilters.sort);
+
+    return params.toString();
+  };
 
   useEffect(() => {
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    apiPaginated<Job>(`jobs?page=${pageState}&per_page=${perPageState}`)
+    const qs = buildQuery({ page: pageState, per_page: perPageState, nextFilters: filters });
+    apiPaginated<Job>(`jobs?${qs}`)
       .then((res) => alive && setData(res))
       .catch((e: unknown) =>
         alive && setError(getErrorMessage(e, "Failed to load jobs")),
@@ -66,7 +152,7 @@ export function JobsClient() {
     return () => {
       alive = false;
     };
-  }, [pageState, perPageState]);
+  }, [pageState, perPageState, filters]);
 
   useEffect(() => {
     if (!token || role !== "applicant") return;
@@ -93,18 +179,180 @@ export function JobsClient() {
     });
   };
 
+  const applyFilters = () => {
+    setMoreOpen(false);
+    setPageState(1);
+    setFilters(draft);
+    const safePerPage = toPositiveInt(String(perPageState), 10);
+    router.push(`/jobs?${buildQuery({ page: 1, per_page: safePerPage, nextFilters: draft })}`);
+  };
+
+  const clearFilters = () => {
+    const cleared: JobFilters = {
+      q: "",
+      location: "",
+      work_arrangement: "any",
+      salary_min: "",
+      salary_max: "",
+      salary_currency: "",
+      salary_period: "",
+      sort: "newest",
+    };
+    setMoreOpen(false);
+    setDraft(cleared);
+    setFilters(cleared);
+    setPageState(1);
+    const safePerPage = toPositiveInt(String(perPageState), 10);
+    router.push(`/jobs?page=1&per_page=${safePerPage}`);
+  };
+
   const goTo = (nextPage: number) => {
     const safeNext = toPositiveInt(String(nextPage), 1);
     const minPage = Math.max(1, safeNext);
     const bounded = data ? Math.min(minPage, lastPage) : minPage;
     setPageState(bounded);
     const safePerPage = toPositiveInt(String(perPageState), 10);
-    router.push(`/jobs?page=${bounded}&per_page=${safePerPage}`);
+    router.push(`/jobs?${buildQuery({ page: bounded, per_page: safePerPage, nextFilters: filters })}`);
   };
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-bold tracking-tight">Jobs</h1>
+      <div className="rounded-2xl bg-indigo-950 px-5 py-5 text-white shadow-md">
+        <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <div>
+            <p className="text-sm font-semibold text-white/90">What</p>
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input
+                value={draft.q}
+                onChange={(e) => setDraft((p) => ({ ...p, q: e.target.value }))}
+                placeholder="Enter keywords"
+                className="h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") applyFilters();
+                }}
+              />
+              <select
+                value={draft.work_arrangement}
+                onChange={(e) =>
+                  setDraft((p) => ({
+                    ...p,
+                    work_arrangement: e.target.value as WorkArrangement,
+                  }))
+                }
+                className="h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+              >
+                <option value="any">Any work arrangement</option>
+                <option value="remote">Remote only</option>
+                <option value="onsite">On-site only</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-white/90">Where</p>
+            <input
+              value={draft.location}
+              onChange={(e) => setDraft((p) => ({ ...p, location: e.target.value }))}
+              placeholder="Enter suburb, city, or region"
+              className="mt-2 h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") applyFilters();
+              }}
+            />
+          </div>
+
+          <div className="flex items-end gap-2">
+            <button
+              type="button"
+              onClick={applyFilters}
+              className="h-11 rounded-md bg-fuchsia-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-fuchsia-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              Search
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-sm text-white/70 underline-offset-4 hover:text-white hover:underline"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            className="text-sm font-medium text-white/85 underline-offset-4 hover:text-white hover:underline"
+          >
+            More options
+          </button>
+        </div>
+
+        {moreOpen && (
+          <div className="mt-4 grid gap-3 rounded-xl bg-white/10 p-4 ring-1 ring-white/10 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs font-semibold text-white/90">Salary min</p>
+              <input
+                value={draft.salary_min}
+                onChange={(e) => setDraft((p) => ({ ...p, salary_min: e.target.value }))}
+                inputMode="numeric"
+                placeholder="e.g. 3000"
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+              />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white/90">Salary max</p>
+              <input
+                value={draft.salary_max}
+                onChange={(e) => setDraft((p) => ({ ...p, salary_max: e.target.value }))}
+                inputMode="numeric"
+                placeholder="e.g. 8000"
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+              />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white/90">Currency</p>
+              <select
+                value={draft.salary_currency}
+                onChange={(e) => setDraft((p) => ({ ...p, salary_currency: e.target.value }))}
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+              >
+                <option value="">Any</option>
+                <option value="MYR">MYR</option>
+                <option value="USD">USD</option>
+                <option value="SGD">SGD</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white/90">Period</p>
+              <select
+                value={draft.salary_period}
+                onChange={(e) =>
+                  setDraft((p) => ({ ...p, salary_period: e.target.value as JobFilters["salary_period"] }))
+                }
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+              >
+                <option value="">Any</option>
+                <option value="month">Per month</option>
+                <option value="year">Per year</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4">
+              <p className="text-xs font-semibold text-white/90">Sort</p>
+              <select
+                value={draft.sort}
+                onChange={(e) => setDraft((p) => ({ ...p, sort: e.target.value as Sort }))}
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
       {loading && <p className="text-sm text-zinc-600">Loading.</p>}
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">

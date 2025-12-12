@@ -8,24 +8,50 @@ use App\Http\Resources\JobResource;
 use App\Http\Requests\JobStoreRequest;
 use App\Http\Requests\JobUpdateRequest;
 use App\Models\Job;
+use App\Services\JobSearchService;
 use App\Services\JobService;
 use Illuminate\Http\Request;
 
 class EmployerJobController extends Controller
 {
-    public function __construct(protected JobService $jobService)
+    public function __construct(
+        protected JobService $jobService,
+        protected JobSearchService $jobSearchService
+    )
     {
     }
 
     public function index(Request $request)
     {
         $user = $request->user();
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'is_remote' => ['nullable', 'boolean'],
+            'status' => ['nullable', 'string', 'in:draft,published'],
+            'salary_min' => ['nullable', 'integer', 'min:0'],
+            'salary_max' => ['nullable', 'integer', 'min:0'],
+            'salary_currency' => ['nullable', 'string', 'size:3'],
+            'salary_period' => ['nullable', 'string', 'in:month,year'],
+            'sort' => ['nullable', 'string', 'in:newest,oldest'],
+        ]);
+
         $perPage = (int) $request->query('per_page', 10);
         $perPage = max(1, min($perPage, 50));
 
-        $jobs = Job::query()
-            ->where('employer_id', $user->id)
-            ->orderByDesc('created_at')
+        $query = Job::query()
+            ->where('employer_id', $user->id);
+
+        $this->jobSearchService->applyFilters($query, $filters);
+
+        $sort = $filters['sort'] ?? 'newest';
+        if ($sort === 'oldest') {
+            $query->orderBy('created_at')->orderBy('id');
+        } else {
+            $query->orderByDesc('created_at')->orderByDesc('id');
+        }
+
+        $jobs = $query
             ->paginate($perPage);
 
         return new JobCollection($jobs);
