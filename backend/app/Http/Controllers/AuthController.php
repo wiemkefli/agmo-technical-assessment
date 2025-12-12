@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
@@ -23,10 +24,10 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth')->plainTextToken;
 
-        return response()->json([
-            'data' => $user,
-            'token' => $token,
-        ], 201);
+        return (new UserResource($user))
+            ->additional(['token' => $token])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function login(LoginRequest $request)
@@ -41,10 +42,9 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth')->plainTextToken;
 
-        return response()->json([
-            'data' => $user,
-            'token' => $token,
-        ]);
+        return (new UserResource($user))
+            ->additional(['token' => $token])
+            ->response();
     }
 
     public function logout(Request $request)
@@ -59,9 +59,6 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json([
-            'data' => $request->user(),
-        ]);
+        return new UserResource($request->user());
     }
 }
-

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ApplicationResource;
+use App\Http\Resources\JobCollection;
+use App\Http\Resources\JobResource;
 use App\Http\Requests\JobStoreRequest;
 use App\Http\Requests\JobUpdateRequest;
 use App\Models\Job;
@@ -25,15 +28,7 @@ class EmployerJobController extends Controller
             ->orderByDesc('created_at')
             ->paginate($perPage);
 
-        return response()->json([
-            'data' => $jobs->items(),
-            'meta' => [
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'per_page' => $jobs->perPage(),
-                'total' => $jobs->total(),
-            ],
-        ]);
+        return new JobCollection($jobs);
     }
 
     public function store(JobStoreRequest $request)
@@ -42,7 +37,9 @@ class EmployerJobController extends Controller
 
         $job = $this->jobService->create($request->user(), $request->validated());
 
-        return response()->json(['data' => $job], 201);
+        return (new JobResource($job))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(JobUpdateRequest $request, Job $job)
@@ -51,7 +48,7 @@ class EmployerJobController extends Controller
 
         $job = $this->jobService->update($job, $request->validated());
 
-        return response()->json(['data' => $job]);
+        return new JobResource($job);
     }
 
     public function destroy(Job $job)
@@ -72,9 +69,6 @@ class EmployerJobController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return response()->json([
-            'data' => $applications,
-        ]);
+        return ApplicationResource::collection($applications);
     }
 }
-

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ApplicationResource;
 use App\Http\Requests\ApplicationStoreRequest;
 use App\Models\Job;
 use App\Services\ApplicationService;
@@ -20,7 +21,8 @@ class ApplicationController extends Controller
             $request->validated()
         );
 
-        return response()->json(['data' => $application], 201);
+        return (new ApplicationResource($application))
+            ->response()
+            ->setStatusCode(201);
     }
 }
-

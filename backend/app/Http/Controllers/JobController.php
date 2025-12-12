@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\JobCollection;
+use App\Http\Resources\JobResource;
 use App\Models\Job;
 use Illuminate\Http\Request;
 
@@ -17,15 +19,7 @@ class JobController extends Controller
             ->orderByDesc('created_at')
             ->paginate($perPage);
 
-        return response()->json([
-            'data' => $jobs->items(),
-            'meta' => [
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'per_page' => $jobs->perPage(),
-                'total' => $jobs->total(),
-            ],
-        ]);
+        return new JobCollection($jobs);
     }
 
     public function show(Job $job)
@@ -34,9 +28,6 @@ class JobController extends Controller
             abort(404);
         }
 
-        return response()->json([
-            'data' => $job,
-        ]);
+        return new JobResource($job);
     }
 }
-
