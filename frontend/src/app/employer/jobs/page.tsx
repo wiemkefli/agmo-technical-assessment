@@ -14,7 +14,6 @@ export default function EmployerJobsPage() {
   const [data, setData] = useState<PaginatedResponse<Job> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
   const [editJobId, setEditJobId] = useState<number | null>(null);
   const [applicationsJobId, setApplicationsJobId] = useState<number | null>(
     null,
@@ -50,16 +49,7 @@ export default function EmployerJobsPage() {
   return (
     <Protected roles={["employer"]}>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">My Jobs</h1>
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500"
-          >
-            New Job
-          </button>
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight">My Jobs</h1>
         {loading && <p className="text-sm text-zinc-600">Loading.</p>}
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -98,14 +88,6 @@ export default function EmployerJobsPage() {
           </div>
         )}
       </div>
-
-      {createOpen && (
-        <EmployerJobModal
-          mode="create"
-          onClose={() => setCreateOpen(false)}
-          onDone={reloadJobs}
-        />
-      )}
 
       {editJobId !== null && (
         <EmployerJobModal

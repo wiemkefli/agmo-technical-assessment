@@ -12,7 +12,7 @@ export default function EmployerJobNewPage() {
   const { token } = useAuthStore();
 
   const handleCreate = async (payload: JobFormPayload) => {
-    if (!token) return;
+    if (!token) throw new Error("You are not logged in.");
     await apiRequest("employer/jobs", {
       method: "POST",
       token,

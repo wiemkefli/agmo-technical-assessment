@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { APIError } from "@/lib/api";
 import type { JobFormPayload, JobStatus } from "@/lib/types";
 
 export function JobForm({
@@ -85,7 +86,12 @@ export function JobForm({
         status,
       });
     } catch (err: unknown) {
-      setError((err as Error)?.message ?? "Failed to save job");
+      if (err instanceof APIError && err.errors) {
+        const firstError = Object.values(err.errors).flat()[0];
+        setError(firstError ?? err.message);
+      } else {
+        setError((err as Error)?.message ?? "Failed to save job");
+      }
     } finally {
       setSaving(false);
     }
@@ -196,4 +202,3 @@ export function JobForm({
     </form>
   );
 }
-
