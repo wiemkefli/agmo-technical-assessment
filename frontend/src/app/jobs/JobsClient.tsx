@@ -217,7 +217,7 @@ export function JobsClient() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-indigo-950 px-5 py-5 text-white shadow-md">
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-950 via-emerald-900 to-green-950 px-5 py-5 text-white shadow-md ring-1 ring-emerald-400/10">
         <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
           <div>
             <p className="text-sm font-semibold text-white/90">What</p>
@@ -226,7 +226,7 @@ export function JobsClient() {
                 value={draft.q}
                 onChange={(e) => setDraft((p) => ({ ...p, q: e.target.value }))}
                 placeholder="Enter keywords"
-                className="h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+                className="h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-400"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") applyFilters();
                 }}
@@ -239,7 +239,7 @@ export function JobsClient() {
                     work_arrangement: e.target.value as WorkArrangement,
                   }))
                 }
-                className="h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+                className="h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-emerald-400"
               >
                 <option value="any">Any work arrangement</option>
                 <option value="remote">Remote only</option>
@@ -254,7 +254,7 @@ export function JobsClient() {
               value={draft.location}
               onChange={(e) => setDraft((p) => ({ ...p, location: e.target.value }))}
               placeholder="Enter suburb, city, or region"
-              className="mt-2 h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+              className="mt-2 h-11 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-400"
               onKeyDown={(e) => {
                 if (e.key === "Enter") applyFilters();
               }}
@@ -265,7 +265,7 @@ export function JobsClient() {
             <button
               type="button"
               onClick={applyFilters}
-              className="h-11 rounded-md bg-fuchsia-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-fuchsia-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              className="h-11 rounded-md bg-emerald-500 px-5 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
               Search
             </button>
@@ -290,7 +290,7 @@ export function JobsClient() {
         </div>
 
         {moreOpen && (
-          <div className="mt-4 grid gap-3 rounded-xl bg-white/10 p-4 ring-1 ring-white/10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-3 rounded-xl bg-white/10 p-4 ring-1 ring-emerald-300/20 backdrop-blur sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <p className="text-xs font-semibold text-white/90">Salary min</p>
               <input
@@ -298,7 +298,7 @@ export function JobsClient() {
                 onChange={(e) => setDraft((p) => ({ ...p, salary_min: e.target.value }))}
                 inputMode="numeric"
                 placeholder="e.g. 3000"
-                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-400"
               />
             </div>
             <div>
@@ -308,7 +308,7 @@ export function JobsClient() {
                 onChange={(e) => setDraft((p) => ({ ...p, salary_max: e.target.value }))}
                 inputMode="numeric"
                 placeholder="e.g. 8000"
-                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-fuchsia-400"
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-400"
               />
             </div>
             <div>
@@ -316,7 +316,7 @@ export function JobsClient() {
               <select
                 value={draft.salary_currency}
                 onChange={(e) => setDraft((p) => ({ ...p, salary_currency: e.target.value }))}
-                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-emerald-400"
               >
                 <option value="">Any</option>
                 <option value="MYR">MYR</option>
@@ -331,7 +331,7 @@ export function JobsClient() {
                 onChange={(e) =>
                   setDraft((p) => ({ ...p, salary_period: e.target.value as JobFilters["salary_period"] }))
                 }
-                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-emerald-400"
               >
                 <option value="">Any</option>
                 <option value="month">Per month</option>
@@ -343,7 +343,7 @@ export function JobsClient() {
               <select
                 value={draft.sort}
                 onChange={(e) => setDraft((p) => ({ ...p, sort: e.target.value as Sort }))}
-                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-fuchsia-400"
+                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-emerald-400"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -372,6 +372,7 @@ export function JobsClient() {
                 <JobCard
                   job={job}
                   applied={role === "applicant" && !!token && appliedJobIds.has(job.id)}
+                  showStatus={false}
                 />
               </button>
             ))}

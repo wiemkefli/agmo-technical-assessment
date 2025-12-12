@@ -4,9 +4,11 @@ import { formatSalary } from "@/lib/salary";
 export function JobCard({
   job,
   applied = false,
+  showStatus = true,
 }: {
   job: Job;
   applied?: boolean;
+  showStatus?: boolean;
 }) {
   const badgeClass =
     job.status === "published"
@@ -35,9 +37,11 @@ export function JobCard({
           </p>
           {salary && <p className="mt-1 text-sm text-zinc-700">{salary}</p>}
         </div>
-        <span className={`rounded-full px-2 py-1 text-xs font-medium ${badgeClass}`}>
-          {job.status}
-        </span>
+        {showStatus && (
+          <span className={`rounded-full px-2 py-1 text-xs font-medium ${badgeClass}`}>
+            {job.status}
+          </span>
+        )}
       </div>
       <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-800">
         {job.description}
@@ -45,4 +49,3 @@ export function JobCard({
     </div>
   );
 }
-
