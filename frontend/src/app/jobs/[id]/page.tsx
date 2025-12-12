@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { apiRequest, getErrorMessage } from "@/lib/api";
-import type { Job } from "@/lib/types";
+import { APIError, apiRequest, getErrorMessage } from "@/lib/api";
+import type { Application, Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "@/components/ApplicationForm";
 
@@ -15,6 +15,7 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -28,6 +29,23 @@ export default function JobDetailPage() {
       alive = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!token || role !== "applicant") return;
+    let alive = true;
+    apiRequest<{ data: Application[] }>("applications", { token })
+      .then((res) => {
+        if (!alive) return;
+        setAlreadyApplied(res.data.some((a) => String(a.job_id) === String(id)));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setAlreadyApplied(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [id, token, role]);
 
   const handleApply = async ({
     message,
@@ -45,12 +63,25 @@ export default function JobDetailPage() {
     form.append("message", message);
     if (resume) form.append("resume", resume);
 
-    await apiRequest(`jobs/${id}/apply`, {
-      method: "POST",
-      body: form,
-      token,
-      isFormData: true,
-    });
+    try {
+      await apiRequest(`jobs/${id}/apply`, {
+        method: "POST",
+        body: form,
+        token,
+        isFormData: true,
+      });
+      setAlreadyApplied(true);
+    } catch (e: unknown) {
+      if (
+        e instanceof APIError &&
+        e.status === 422 &&
+        e.errors?.job?.some((m) => m.toLowerCase().includes("already applied"))
+      ) {
+        setAlreadyApplied(true);
+        return;
+      }
+      throw e;
+    }
   };
 
   if (loading) return <p className="text-sm text-zinc-600">Loading…</p>;
@@ -74,10 +105,20 @@ export default function JobDetailPage() {
 
       {role === "applicant" && (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-900">Apply to this job</h2>
-          <div className="mt-3">
-            <ApplicationForm onSubmit={handleApply} />
-          </div>
+          {alreadyApplied ? (
+            <div className="rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
+              You have already applied to this job.
+            </div>
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold text-zinc-900">
+                Apply to this job
+              </h2>
+              <div className="mt-3">
+                <ApplicationForm onSubmit={handleApply} />
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -95,4 +136,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-

@@ -20,6 +20,7 @@ Route::get('jobs', [JobController::class, 'index']);
 Route::get('jobs/{job}', [JobController::class, 'show']);
 
 Route::middleware(['auth:sanctum', 'role:applicant'])->group(function () {
+    Route::get('applications', [ApplicationController::class, 'index']);
     Route::post('jobs/{job}/apply', [ApplicationController::class, 'store']);
 });
 

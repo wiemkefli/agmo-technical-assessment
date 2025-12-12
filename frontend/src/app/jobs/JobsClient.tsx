@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { apiPaginated, getErrorMessage } from "@/lib/api";
-import type { Job, PaginatedResponse } from "@/lib/types";
+import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
+import type { Application, Job, PaginatedResponse } from "@/lib/types";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
+import { useAuthStore } from "@/store/auth";
 
 export function JobsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { token, role } = useAuthStore();
+
   const toPositiveInt = (value: unknown, fallback: number) => {
-    const n = typeof value === "string" ? Number.parseInt(value, 10) : Number(value);
+    const n =
+      typeof value === "string" ? Number.parseInt(value, 10) : Number(value);
     return Number.isFinite(n) && n > 0 ? n : fallback;
   };
 
@@ -25,9 +29,16 @@ export function JobsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<number>>(new Set());
 
-  const currentPage = toPositiveInt(String(data?.meta.current_page ?? pageState), pageState);
-  const lastPage = toPositiveInt(String(data?.meta.last_page ?? currentPage), currentPage);
+  const currentPage = toPositiveInt(
+    String(data?.meta.current_page ?? pageState),
+    pageState,
+  );
+  const lastPage = toPositiveInt(
+    String(data?.meta.last_page ?? currentPage),
+    currentPage,
+  );
   const prevDisabled = loading || currentPage <= 1;
   const nextDisabled = loading || (data ? currentPage >= lastPage : false);
 
@@ -48,12 +59,39 @@ export function JobsClient() {
     setError(null);
     apiPaginated<Job>(`jobs?page=${pageState}&per_page=${perPageState}`)
       .then((res) => alive && setData(res))
-      .catch((e: unknown) => alive && setError(getErrorMessage(e, "Failed to load jobs")))
+      .catch((e: unknown) =>
+        alive && setError(getErrorMessage(e, "Failed to load jobs")),
+      )
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
   }, [pageState, perPageState]);
+
+  useEffect(() => {
+    if (!token || role !== "applicant") return;
+    let alive = true;
+    apiRequest<{ data: Application[] }>("applications", { token })
+      .then((res) => {
+        if (!alive) return;
+        setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setAppliedJobIds(new Set());
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token, role]);
+
+  const markApplied = (jobId: number) => {
+    setAppliedJobIds((prev) => {
+      const next = new Set(prev);
+      next.add(jobId);
+      return next;
+    });
+  };
 
   const goTo = (nextPage: number) => {
     const safeNext = toPositiveInt(String(nextPage), 1);
@@ -67,7 +105,7 @@ export function JobsClient() {
   return (
     <div className="space-y-4">
       <h1 className="text-3xl font-bold tracking-tight">Jobs</h1>
-      {loading && <p className="text-sm text-zinc-600">Loading…</p>}
+      {loading && <p className="text-sm text-zinc-600">Loading.</p>}
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
@@ -83,7 +121,10 @@ export function JobsClient() {
                 onClick={() => setSelectedJobId(job.id)}
                 className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
               >
-                <JobCard job={job} />
+                <JobCard
+                  job={job}
+                  applied={role === "applicant" && !!token && appliedJobIds.has(job.id)}
+                />
               </button>
             ))}
           </div>
@@ -109,8 +150,14 @@ export function JobsClient() {
         </>
       )}
       {selectedJobId !== null && (
-        <JobModal jobId={selectedJobId} onClose={() => setSelectedJobId(null)} />
+        <JobModal
+          jobId={selectedJobId}
+          alreadyApplied={appliedJobIds.has(selectedJobId)}
+          onApplied={markApplied}
+          onClose={() => setSelectedJobId(null)}
+        />
       )}
     </div>
   );
 }
+
