@@ -136,7 +136,7 @@ export function JobsClient() {
             >
               Previous
             </button>
-            <span className="text-sm text-zinc-700">
+            <span className="text-sm text-zinc-600">
               Page {currentPage} of {lastPage}
             </span>
             <button
@@ -160,4 +160,3 @@ export function JobsClient() {
     </div>
   );
 }
-

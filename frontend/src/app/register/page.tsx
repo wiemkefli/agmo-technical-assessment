@@ -34,7 +34,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md rounded-2xl border border-zinc-200 bg-white p-7 shadow-sm">
+    <div className="mx-auto max-w-md rounded-2xl border border-zinc-200 bg-white p-7 text-zinc-900 shadow-sm">
       <h1 className="text-3xl font-bold tracking-tight">Register</h1>
       <p className="mt-1 text-sm text-zinc-600">
         Already have an account?{" "}
