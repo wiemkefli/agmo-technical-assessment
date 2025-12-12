@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
 import type { Application, Job, PaginatedResponse } from "@/lib/types";
@@ -76,6 +76,10 @@ export function JobsClient() {
   const [error, setError] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<number>>(new Set());
+  const [savedJobIds, setSavedJobIds] = useState<Set<number>>(new Set());
+  const [savedJobs, setSavedJobs] = useState<Job[]>([]);
+  const savingJobIdsRef = useRef<Set<number>>(new Set());
+  const [savingJobIds, setSavingJobIds] = useState<Set<number>>(new Set());
 
   const currentPage = toPositiveInt(
     String(data?.meta.current_page ?? pageState),
@@ -85,8 +89,8 @@ export function JobsClient() {
     String(data?.meta.last_page ?? currentPage),
     currentPage,
   );
-  const prevDisabled = loading || currentPage <= 1;
-  const nextDisabled = loading || (data ? currentPage >= lastPage : false);
+  const prevDisabled = loading || !data || currentPage <= 1;
+  const nextDisabled = loading || !data || currentPage >= lastPage;
 
   useEffect(() => {
     const nextPage = toPositiveInt(searchParams.get("page"), 1);
@@ -94,7 +98,6 @@ export function JobsClient() {
     const nextFilters = parseFiltersFromSearchParams(searchParams);
 
     // Sync local state from URL only when URL changes.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPageState((prev) => (prev === nextPage ? prev : nextPage));
     setPerPageState((prev) => (prev === nextPerPage ? prev : nextPerPage));
     setFilters((prev) =>
@@ -139,10 +142,14 @@ export function JobsClient() {
 
   useEffect(() => {
     let alive = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    const qs = buildQuery({ page: pageState, per_page: perPageState, nextFilters: filters });
+    const qs = buildQuery({
+      page: pageState,
+      per_page: perPageState,
+      nextFilters: filters,
+    });
+
     apiPaginated<Job>(`jobs?${qs}`)
       .then((res) => alive && setData(res))
       .catch((e: unknown) =>
@@ -152,7 +159,7 @@ export function JobsClient() {
     return () => {
       alive = false;
     };
-  }, [pageState, perPageState, filters]);
+  }, [pageState, perPageState, filters, token, role]);
 
   useEffect(() => {
     if (!token || role !== "applicant") return;
@@ -171,12 +178,68 @@ export function JobsClient() {
     };
   }, [token, role]);
 
+  const reloadSavedJobs = () => {
+    if (!token || role !== "applicant") return;
+    apiPaginated<Job>("saved-jobs?per_page=5", { token })
+      .then((res) => {
+        setSavedJobs(res.data);
+      })
+      .catch(() => {
+        setSavedJobs([]);
+      });
+  };
+
+  const reloadSavedJobIds = () => {
+    if (!token || role !== "applicant") return;
+    apiRequest<{ data: number[] }>("saved-jobs/ids", { token })
+      .then((res) => setSavedJobIds(new Set(res.data)))
+      .catch(() => setSavedJobIds(new Set()));
+  };
+
+  useEffect(() => {
+    if (!token || role !== "applicant") return;
+    reloadSavedJobs();
+    reloadSavedJobIds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, role]);
+
   const markApplied = (jobId: number) => {
     setAppliedJobIds((prev) => {
       const next = new Set(prev);
       next.add(jobId);
       return next;
     });
+  };
+
+  const toggleSave = async (job: Job) => {
+    if (!token || role !== "applicant") return;
+    if (savingJobIdsRef.current.has(job.id)) return;
+
+    const isSaved = savedJobIds.has(job.id);
+    savingJobIdsRef.current.add(job.id);
+    setSavingJobIds(new Set(savingJobIdsRef.current));
+
+    try {
+      if (isSaved) {
+        await apiRequest(`jobs/${job.id}/save`, { method: "DELETE", token });
+        setSavedJobIds((prev) => {
+          const next = new Set(prev);
+          next.delete(job.id);
+          return next;
+        });
+        setSavedJobs((prev) => prev.filter((j) => j.id !== job.id));
+      } else {
+        await apiRequest(`jobs/${job.id}/save`, { method: "POST", token });
+        setSavedJobIds((prev) => new Set(prev).add(job.id));
+        setSavedJobs((prev) => [job, ...prev.filter((j) => j.id !== job.id)].slice(0, 5));
+      }
+
+      reloadSavedJobs();
+      reloadSavedJobIds();
+    } finally {
+      savingJobIdsRef.current.delete(job.id);
+      setSavingJobIds(new Set(savingJobIdsRef.current));
+    }
   };
 
   const applyFilters = () => {
@@ -361,40 +424,164 @@ export function JobsClient() {
       )}
       {data && (
         <>
-          <div className="grid grid-cols-1 gap-4">
-            {data.data.map((job) => (
-              <button
-                key={job.id}
-                type="button"
-                onClick={() => setSelectedJobId(job.id)}
-                className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
-              >
-                <JobCard
-                  job={job}
-                  applied={role === "applicant" && !!token && appliedJobIds.has(job.id)}
-                  showStatus={false}
-                />
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center justify-between pt-2">
-            <button
-              onClick={() => goTo(currentPage - 1)}
-              disabled={prevDisabled}
-              className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-zinc-600">
-              Page {currentPage} of {lastPage}
-            </span>
-            <button
-              onClick={() => goTo(currentPage + 1)}
-              disabled={nextDisabled}
-              className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-            >
-              Next
-            </button>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-zinc-900">Recommended</h2>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {data.data.map((job) => {
+                  const isApplicant = role === "applicant" && !!token;
+                  const applied = isApplicant && appliedJobIds.has(job.id);
+                  const saved = isApplicant && savedJobIds.has(job.id);
+
+                  return (
+                    <div key={job.id} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedJobId(job.id)}
+                        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
+                      >
+                        <JobCard job={job} applied={applied} showStatus={false} />
+                      </button>
+
+                      {isApplicant && (
+                        <button
+                          type="button"
+                          aria-label={saved ? "Unsave job" : "Save job"}
+                          title={saved ? "Saved" : "Save"}
+                          disabled={savingJobIds.has(job.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleSave(job);
+                          }}
+                          className="absolute right-3 top-3 rounded-full bg-white/90 p-2 text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-white hover:text-emerald-700 disabled:opacity-50"
+                        >
+                          {saved ? (
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              className="h-5 w-5 text-emerald-600"
+                            >
+                              <path d="M6 2a2 2 0 0 0-2 2v18l8-5 8 5V4a2 2 0 0 0-2-2H6z" />
+                            </svg>
+                          ) : (
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              className="h-5 w-5"
+                            >
+                              <path d="M6 2h12a2 2 0 0 1 2 2v18l-8-5-8 5V4a2 2 0 0 1 2-2z" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  onClick={() => goTo(currentPage - 1)}
+                  disabled={prevDisabled}
+                  className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <div className="text-sm text-zinc-600">
+                  Page {currentPage} of {lastPage}
+                </div>
+                <button
+                  onClick={() => goTo(currentPage + 1)}
+                  disabled={nextDisabled}
+                  className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </section>
+
+            <aside className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-zinc-900">Saved jobs</h3>
+                {role === "applicant" && token && (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/saved-jobs")}
+                    className="text-sm font-medium text-emerald-700 hover:underline underline-offset-4"
+                  >
+                    View all ({savedJobIds.size})
+                  </button>
+                )}
+              </div>
+
+              {!token && (
+                <p className="text-sm text-zinc-600">
+                  Login as an applicant to save jobs.
+                </p>
+              )}
+
+              {token && role !== "applicant" && (
+                <p className="text-sm text-zinc-600">
+                  Saved jobs are available for applicants only.
+                </p>
+              )}
+
+              {token && role === "applicant" && (
+                <div className="space-y-4">
+                  {savedJobs.length === 0 ? (
+                    <p className="text-sm text-zinc-600">
+                      You haven&apos;t saved any jobs yet.
+                    </p>
+                  ) : (
+                    savedJobs.map((job) => (
+                      <div key={job.id} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedJobId(job.id)}
+                          className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
+                        >
+                          <JobCard
+                            job={job}
+                            applied={appliedJobIds.has(job.id)}
+                            showStatus={false}
+                            variant="compact"
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Remove saved job"
+                          title="Remove"
+                          disabled={savingJobIds.has(job.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleSave(job);
+                          }}
+                          className="absolute right-1 top-1 rounded-md p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 disabled:opacity-50"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="h-4 w-4"
+                          >
+                            <path d="M18 6 6 18" />
+                            <path d="M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </aside>
           </div>
         </>
       )}

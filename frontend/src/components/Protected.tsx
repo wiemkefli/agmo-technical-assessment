@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -33,7 +33,7 @@ export function Protected({
     return (
       <div className="mx-auto max-w-2xl py-10">
         <h1 className="text-2xl font-semibold">403 Forbidden</h1>
-        <p className="mt-2 text-zinc-600">You don’t have access to this page.</p>
+        <p className="mt-2 text-zinc-600">You don&apos;t have access to this page.</p>
       </div>
     );
   }

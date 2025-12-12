@@ -4,6 +4,8 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployerJobController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\SavedJobController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -22,6 +24,12 @@ Route::get('jobs/{job}', [JobController::class, 'show']);
 Route::middleware(['auth:sanctum', 'role:applicant'])->group(function () {
     Route::get('applications', [ApplicationController::class, 'index']);
     Route::post('jobs/{job}/apply', [ApplicationController::class, 'store']);
+
+    Route::get('recommended-jobs', [RecommendationController::class, 'index']);
+    Route::get('saved-jobs', [SavedJobController::class, 'index']);
+    Route::get('saved-jobs/ids', [SavedJobController::class, 'ids']);
+    Route::post('jobs/{job}/save', [SavedJobController::class, 'store']);
+    Route::delete('jobs/{job}/save', [SavedJobController::class, 'destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(function () {
