@@ -111,10 +111,10 @@ export function Navbar() {
                 <div className={underlineClass("/saved-jobs")} />
               </div>
               <div className="relative">
-                <Link href="/applications" className={navLinkClass("/applications")}>
-                  Job applications
+                <Link href="/applied-jobs" className={navLinkClass("/applied-jobs")}>
+                  Applied jobs
                 </Link>
-                <div className={underlineClass("/applications")} />
+                <div className={underlineClass("/applied-jobs")} />
               </div>
             </>
           )}
@@ -203,11 +203,11 @@ export function Navbar() {
                           Saved jobs
                         </Link>
                         <Link
-                          href="/applications"
+                          href="/applied-jobs"
                           onClick={() => setMenuOpen(false)}
                           className="block px-3 py-2 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
                         >
-                          Job applications
+                          Applied jobs
                         </Link>
                       </>
                     )}
