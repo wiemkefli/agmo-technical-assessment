@@ -99,12 +99,15 @@ export function EmployerApplicationsModal({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <h2 className="text-2xl font-bold tracking-tight text-zinc-900 break-words [overflow-wrap:anywhere]">
                 Applications
               </h2>
               {jobTitle && (
-                <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
+                <p
+                  className="mt-1 text-sm text-zinc-600 truncate"
+                  title={jobTitle}
+                >
                   {jobTitle}
                 </p>
               )}
@@ -114,7 +117,7 @@ export function EmployerApplicationsModal({
               className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
               aria-label="Close"
             >
-              ?
+              x
             </button>
           </div>
 

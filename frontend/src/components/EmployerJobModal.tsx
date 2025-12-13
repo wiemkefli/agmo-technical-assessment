@@ -100,7 +100,7 @@ export function EmployerJobModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 break-words [overflow-wrap:anywhere]">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 line-clamp-2">
               {mode === "create" ? "Create Job" : job?.title ?? "Edit Job"}
             </h2>
             {mode === "edit" && job && (
@@ -126,7 +126,7 @@ export function EmployerJobModal({
               className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
               aria-label="Close"
             >
-              ?
+              x
             </button>
           </div>
         </div>

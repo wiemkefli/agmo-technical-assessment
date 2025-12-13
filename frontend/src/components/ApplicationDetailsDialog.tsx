@@ -53,7 +53,7 @@ export function ApplicationDetailsDialog({
       >
         <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-4">
           <div className="min-w-0">
-            <h3 className="text-lg font-semibold text-zinc-900 break-words [overflow-wrap:anywhere]">
+            <h3 className="text-lg font-semibold text-zinc-900 truncate" title={applicantName}>
               {applicantName}
             </h3>
             <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
@@ -65,7 +65,7 @@ export function ApplicationDetailsDialog({
             className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
             aria-label="Close"
           >
-            ×
+            x
           </button>
         </div>
 
@@ -123,4 +123,3 @@ export function ApplicationDetailsDialog({
     </div>
   );
 }
-
