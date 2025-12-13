@@ -12,9 +12,21 @@ class EmployerProfileFactory extends Factory
     public function definition(): array
     {
         return [
-            'company' => fake()->company(),
+            'company' => fake()->randomElement([
+                'Acme Labs',
+                'Northwind Trading',
+                'Contoso Solutions',
+                'BlueSky Logistics',
+                'Evergreen Health',
+                'Summit Retail Group',
+                'Pioneer Manufacturing',
+                'Cedar & Co.',
+                'BrightPath Education',
+                'Oceanview Hospitality',
+                'Silverline Finance',
+                'Greenfield Energy',
+            ]),
             'website' => fake()->boolean(40) ? fake()->url() : null,
         ];
     }
 }
-
