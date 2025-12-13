@@ -76,6 +76,9 @@ export function JobsClient() {
   const [error, setError] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<number>>(new Set());
+  const [applicationStatusByJobId, setApplicationStatusByJobId] = useState<Map<number, string>>(
+    () => new Map(),
+  );
   const [savedJobIds, setSavedJobIds] = useState<Set<number>>(new Set());
   const [savedJobs, setSavedJobs] = useState<Job[]>([]);
   const savingJobIdsRef = useRef<Set<number>>(new Set());
@@ -167,14 +170,16 @@ export function JobsClient() {
   useEffect(() => {
     if (!token || role !== "applicant") return;
     let alive = true;
-    apiRequest<{ data: Application[] }>("applications", { token })
+    apiRequest<{ data: Application[] }>("applied-jobs", { token })
       .then((res) => {
         if (!alive) return;
         setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
+        setApplicationStatusByJobId(new Map(res.data.map((a) => [a.job_id, a.status])));
       })
       .catch(() => {
         if (!alive) return;
         setAppliedJobIds(new Set());
+        setApplicationStatusByJobId(new Map());
       });
     return () => {
       alive = false;
@@ -206,13 +211,18 @@ export function JobsClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, role]);
 
-  const markApplied = (jobId: number) => {
-    setAppliedJobIds((prev) => {
-      const next = new Set(prev);
-      next.add(jobId);
-      return next;
-    });
-  };
+const markApplied = (jobId: number) => {
+  setAppliedJobIds((prev) => {
+    const next = new Set(prev);
+    next.add(jobId);
+    return next;
+  });
+  setApplicationStatusByJobId((prev) => {
+    const next = new Map(prev);
+    next.set(jobId, next.get(jobId) ?? "submitted");
+    return next;
+  });
+};
 
   const toggleSave = async (job: Job) => {
     if (!token || role !== "applicant") return;
@@ -451,7 +461,12 @@ export function JobsClient() {
                         onClick={() => setSelectedJobId(job.id)}
                         className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
                       >
-                        <JobCard job={job} applied={applied} showStatus={false} />
+                  <JobCard
+                    job={job}
+                    applied={applied}
+                    applicationStatus={applicationStatusByJobId.get(job.id)}
+                    showStatus={false}
+                  />
                       </button>
 
                       {isApplicant && (
@@ -557,6 +572,7 @@ export function JobsClient() {
                           <JobCard
                             job={job}
                             applied={appliedJobIds.has(job.id)}
+                            applicationStatus={applicationStatusByJobId.get(job.id)}
                             showStatus={false}
                             variant="compact"
                           />

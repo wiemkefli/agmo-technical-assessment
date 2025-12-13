@@ -16,6 +16,9 @@ export default function SavedJobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<number>>(new Set());
+  const [applicationStatusByJobId, setApplicationStatusByJobId] = useState<Map<number, string>>(
+    () => new Map(),
+  );
 
   const [page, setPage] = useState(1);
   const perPage = 10;
@@ -52,12 +55,17 @@ export default function SavedJobsPage() {
   useEffect(() => {
     if (!token) return;
     let alive = true;
-    apiRequest<{ data: Application[] }>("applications", { token })
+    apiRequest<{ data: Application[] }>("applied-jobs", { token })
       .then((res) => {
         if (!alive) return;
         setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
+        setApplicationStatusByJobId(new Map(res.data.map((a) => [a.job_id, a.status])));
       })
-      .catch(() => alive && setAppliedJobIds(new Set()));
+      .catch(() => {
+        if (!alive) return;
+        setAppliedJobIds(new Set());
+        setApplicationStatusByJobId(new Map());
+      });
     return () => {
       alive = false;
     };
@@ -67,6 +75,11 @@ export default function SavedJobsPage() {
     setAppliedJobIds((prev) => {
       const next = new Set(prev);
       next.add(jobId);
+      return next;
+    });
+    setApplicationStatusByJobId((prev) => {
+      const next = new Map(prev);
+      next.set(jobId, next.get(jobId) ?? "submitted");
       return next;
     });
   };
@@ -123,6 +136,7 @@ export default function SavedJobsPage() {
                       <JobCard
                         job={job}
                         applied={appliedJobIds.has(job.id)}
+                        applicationStatus={applicationStatusByJobId.get(job.id)}
                         showStatus={false}
                       />
                     </button>

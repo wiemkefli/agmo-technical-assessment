@@ -34,7 +34,7 @@ export default function JobDetailPage() {
   useEffect(() => {
     if (!token || role !== "applicant") return;
     let alive = true;
-    apiRequest<{ data: Application[] }>("applications", { token })
+    apiRequest<{ data: Application[] }>("applied-jobs", { token })
       .then((res) => {
         if (!alive) return;
         setAlreadyApplied(res.data.some((a) => String(a.job_id) === String(id)));
