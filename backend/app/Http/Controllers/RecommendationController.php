@@ -32,10 +32,12 @@ class RecommendationController extends Controller
 
         $user = $request->user();
         $savedIds = $user->savedJobs()->pluck('jobs.id')->all();
+        $appliedIds = $user->applications()->pluck('job_id')->all();
+        $excludeIds = array_values(array_unique(array_merge($savedIds, $appliedIds)));
 
         $query = Job::query()
             ->where('status', 'published')
-            ->whereNotIn('id', $savedIds);
+            ->whereNotIn('id', $excludeIds);
 
         $this->jobSearchService->applyFilters($query, $filters);
 

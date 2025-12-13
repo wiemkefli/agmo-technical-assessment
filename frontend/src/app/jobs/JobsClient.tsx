@@ -150,7 +150,10 @@ export function JobsClient() {
       nextFilters: filters,
     });
 
-    apiPaginated<Job>(`jobs?${qs}`)
+    const endpoint =
+      token && role === "applicant" ? `recommended-jobs?${qs}` : `jobs?${qs}`;
+
+    apiPaginated<Job>(endpoint, token ? { token } : undefined)
       .then((res) => alive && setData(res))
       .catch((e: unknown) =>
         alive && setError(getErrorMessage(e, "Failed to load jobs")),
@@ -431,7 +434,12 @@ export function JobsClient() {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {data.data.map((job) => {
+                {data.data
+                  .filter((job) => {
+                    const isApplicant = role === "applicant" && !!token;
+                    return !(isApplicant && appliedJobIds.has(job.id));
+                  })
+                  .map((job) => {
                   const isApplicant = role === "applicant" && !!token;
                   const applied = isApplicant && appliedJobIds.has(job.id);
                   const saved = isApplicant && savedJobIds.has(job.id);
