@@ -6,11 +6,15 @@ export function JobCard({
   applied = false,
   showStatus = true,
   variant = "default",
+  footer,
+  onClick,
 }: {
   job: Job;
   applied?: boolean;
   showStatus?: boolean;
-  variant?: "default" | "compact";
+  variant?: "default" | "compact" | "saved";
+  footer?: React.ReactNode;
+  onClick?: () => void;
 }) {
   const badgeClass =
     job.status === "published"
@@ -19,13 +23,14 @@ export function JobCard({
 
   const salary = formatSalary(job);
   const isCompact = variant === "compact";
+  const isSaved = variant === "saved";
 
   const company = job.employer?.company ?? job.employer?.name ?? null;
   const metaLine = (() => {
     const location = job.location ?? null;
     const remote = job.is_remote ? "Remote" : null;
     const parts = [company, location, remote].filter((p): p is string => Boolean(p));
-    return parts.join(" • ");
+    return parts.join(" - ");
   })();
 
   const salaryNode = salary ? (
@@ -48,15 +53,43 @@ export function JobCard({
     </p>
   );
 
+  const interactive = Boolean(onClick);
+
+  const rootPadding = isCompact ? "p-4" : "p-5";
+  const heightClass = isCompact
+    ? "h-[9rem]"
+    : isSaved
+      ? "h-[16rem]"
+      : footer
+        ? "h-[15rem]"
+        : "h-[14rem]";
+
   return (
     <div
       className={[
         "group flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/70 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
-        isCompact ? "h-[7.3rem] p-4" : "h-[14rem] p-5",
+        heightClass,
+        rootPadding,
+        interactive
+          ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
+          : "",
       ].join(" ")}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? onClick : undefined}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-start gap-2">
             <h3
               className={[
@@ -72,6 +105,7 @@ export function JobCard({
               </span>
             )}
           </div>
+
           {isCompact ? (
             <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600 truncate">
               {metaLine || "—"}
@@ -87,18 +121,32 @@ export function JobCard({
               </p>
             </>
           )}
+
           {salaryNode}
         </div>
+
         {showStatus && (
           <span className={`rounded-full px-2 py-1 text-xs font-medium ${badgeClass}`}>
             {job.status}
           </span>
         )}
       </div>
+
       {!isCompact && (
-        <p className="mt-3 min-h-[4.5rem] line-clamp-3 text-sm leading-relaxed text-zinc-800">
+        <p
+          className={[
+            "mt-3 text-sm leading-relaxed text-zinc-800",
+            isSaved ? "min-h-[3rem] line-clamp-2" : footer ? "min-h-[3rem] line-clamp-2" : "min-h-[4.5rem] line-clamp-3",
+          ].join(" ")}
+        >
           {job.description}
         </p>
+      )}
+
+      {footer && (
+        <div className="-mx-5 -mb-5 mt-auto border-t border-zinc-200/70 bg-zinc-50/70 px-5 py-3">
+          {footer}
+        </div>
       )}
     </div>
   );

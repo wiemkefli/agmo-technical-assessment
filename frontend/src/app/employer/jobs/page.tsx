@@ -59,31 +59,56 @@ export default function EmployerJobsPage() {
         {data && (
           <div className="grid grid-cols-1 gap-4">
             {data.data.map((job) => (
-              <div key={job.id} className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setEditJobId(job.id)}
-                  className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
-                >
-                  <JobCard job={job} />
-                </button>
-                <div className="flex gap-2 text-xs font-medium">
-                  <button
-                    type="button"
-                    onClick={() => setEditJobId(job.id)}
-                    className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setApplicationsJobId(job.id)}
-                    className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-                  >
-                    Applications
-                  </button>
-                </div>
-              </div>
+              <JobCard
+                key={job.id}
+                job={job}
+                onClick={() => setEditJobId(job.id)}
+                footer={
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditJobId(job.id);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-4 w-4"
+                      >
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setApplicationsJobId(job.id);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-200 transition hover:bg-indigo-100"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-4 w-4"
+                      >
+                        <path d="M16 11a4 4 0 1 0-8 0" />
+                        <path d="M12 12a5 5 0 0 0-9 3" />
+                        <path d="M21 15a5 5 0 0 0-6-3" />
+                      </svg>
+                      Applications
+                    </button>
+                  </div>
+                }
+              />
             ))}
           </div>
         )}
