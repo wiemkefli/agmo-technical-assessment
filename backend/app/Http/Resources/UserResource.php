@@ -8,6 +8,8 @@ class UserResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $isSelf = (int) ($request->user()?->id ?? 0) === (int) $this->id;
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -17,6 +19,15 @@ class UserResource extends JsonResource
             'website' => $this->employerProfile?->website,
             'phone' => $this->applicantProfile?->phone,
             'location' => $this->applicantProfile?->location,
+            'resume' => $this->when(
+                $isSelf && $this->role === 'applicant',
+                fn () => [
+                    'exists' => (bool) $this->applicantProfile?->resume_path,
+                    'original_name' => $this->applicantProfile?->resume_original_name,
+                    'mime' => $this->applicantProfile?->resume_mime,
+                    'size' => $this->applicantProfile?->resume_size,
+                ]
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

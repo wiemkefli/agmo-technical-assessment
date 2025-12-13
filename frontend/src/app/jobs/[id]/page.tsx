@@ -12,7 +12,7 @@ export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
-  const { token, role } = useAuthStore();
+  const { token, role, user } = useAuthStore();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +51,11 @@ export default function JobDetailPage() {
   const handleApply = async ({
     message,
     resume,
+    use_profile_resume,
   }: {
     message: string;
     resume?: File | null;
+    use_profile_resume?: boolean;
   }) => {
     if (!token) {
       router.push("/login");
@@ -63,6 +65,7 @@ export default function JobDetailPage() {
     const form = new FormData();
     form.append("message", message);
     if (resume) form.append("resume", resume);
+    else if (use_profile_resume) form.append("use_profile_resume", "1");
 
     try {
       await apiRequest(`jobs/${id}/apply`, {
@@ -116,7 +119,7 @@ export default function JobDetailPage() {
                 Apply to this job
               </h2>
               <div className="mt-3">
-                <ApplicationForm onSubmit={handleApply} />
+                <ApplicationForm onSubmit={handleApply} savedResume={user?.resume ?? null} />
               </div>
             </>
           )}

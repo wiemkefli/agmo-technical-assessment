@@ -14,6 +14,10 @@ class ApplicantProfile extends Model
         'user_id',
         'phone',
         'location',
+        'resume_path',
+        'resume_original_name',
+        'resume_mime',
+        'resume_size',
     ];
 
     public function user()
@@ -21,4 +25,3 @@ class ApplicantProfile extends Model
         return $this->belongsTo(User::class);
     }
 }
-

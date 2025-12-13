@@ -19,7 +19,7 @@ export function JobModal({
   alreadyApplied?: boolean;
   onApplied?: (jobId: number) => void;
 }) {
-  const { token, role } = useAuthStore();
+  const { token, role, user } = useAuthStore();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +51,11 @@ export function JobModal({
   const handleApply = async ({
     message,
     resume,
+    use_profile_resume,
   }: {
     message: string;
     resume?: File | null;
+    use_profile_resume?: boolean;
   }) => {
     if (!token) {
       onClose();
@@ -64,6 +66,7 @@ export function JobModal({
     const form = new FormData();
     form.append("message", message);
     if (resume) form.append("resume", resume);
+    else if (use_profile_resume) form.append("use_profile_resume", "1");
 
     try {
       await apiRequest(`jobs/${jobId}/apply`, {
@@ -158,7 +161,10 @@ export function JobModal({
                       Apply to this job
                     </h3>
                     <div className="mt-3">
-                      <ApplicationForm onSubmit={handleApply} />
+                      <ApplicationForm
+                        onSubmit={handleApply}
+                        savedResume={user?.resume ?? null}
+                      />
                     </div>
                   </>
                 )}

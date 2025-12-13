@@ -29,6 +29,10 @@ Route::get('jobs', [JobController::class, 'index']);
 Route::get('jobs/{job}', [JobController::class, 'show']);
 
 Route::middleware(['auth:sanctum', 'role:applicant'])->group(function () {
+    Route::post('profile/resume', [ProfileController::class, 'uploadResume']);
+    Route::get('profile/resume', [ProfileController::class, 'downloadResume']);
+    Route::delete('profile/resume', [ProfileController::class, 'deleteResume']);
+
     Route::get('applied-jobs', [ApplicationController::class, 'index']);
     // Backwards-compatible alias (deprecated)
     Route::get('applications', [ApplicationController::class, 'index']);

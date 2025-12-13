@@ -9,6 +9,12 @@ export interface User {
   website?: string | null;
   phone?: string | null;
   location?: string | null;
+  resume?: {
+    exists: boolean;
+    original_name: string | null;
+    mime: string | null;
+    size: number | null;
+  };
   created_at: string;
   updated_at: string;
 }

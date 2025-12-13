@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Application;
 use App\Models\Job;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ApplicationService
@@ -43,6 +45,32 @@ class ApplicationService
             $application->resume_original_name = $file->getClientOriginalName();
             $application->resume_mime = $file->getClientMimeType();
             $application->resume_size = $file->getSize();
+        } elseif (! empty($data['use_profile_resume'])) {
+            $profile = $applicant->applicantProfile()->first();
+
+            if (! $profile?->resume_path) {
+                throw ValidationException::withMessages([
+                    'resume' => ['No saved resume found. Please upload a PDF or apply without a resume.'],
+                ]);
+            }
+
+            $disk = Storage::disk('public');
+            if (! $disk->exists($profile->resume_path)) {
+                throw ValidationException::withMessages([
+                    'resume' => ['Saved resume file is missing. Please upload it again.'],
+                ]);
+            }
+
+            $originalName = $profile->resume_original_name ?: 'resume.pdf';
+            $safeName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $originalName) ?: 'resume.pdf';
+            $destPath = "resumes/{$applicant->id}/" . Str::uuid() . '-' . $safeName;
+
+            $disk->copy($profile->resume_path, $destPath);
+
+            $application->resume_path = $destPath;
+            $application->resume_original_name = $profile->resume_original_name;
+            $application->resume_mime = $profile->resume_mime ?: $disk->mimeType($destPath);
+            $application->resume_size = $profile->resume_size ?: $disk->size($destPath);
         }
 
         $application->save();
@@ -50,4 +78,3 @@ class ApplicationService
         return $application->refresh();
     }
 }
-
