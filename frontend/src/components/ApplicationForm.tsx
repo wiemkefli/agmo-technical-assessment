@@ -7,6 +7,7 @@ export function ApplicationForm({
 }: {
   onSubmit: (payload: { message: string; resume?: File | null }) => Promise<void>;
 }) {
+  const maxResumeBytes = 5 * 1024 * 1024;
   const inputClass =
     "mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
   const [message, setMessage] = useState("");
@@ -20,6 +21,20 @@ export function ApplicationForm({
     setSaving(true);
     setError(null);
     try {
+      if (resume) {
+        const name = resume.name?.toLowerCase() ?? "";
+        const isPdfByName = name.endsWith(".pdf");
+        const isPdfByType = resume.type === "application/pdf";
+
+        if (!isPdfByName && !isPdfByType) {
+          throw new Error("Resume must be a PDF file.");
+        }
+
+        if (resume.size > maxResumeBytes) {
+          throw new Error("Resume file is too large (max 5MB).");
+        }
+      }
+
       await onSubmit({ message, resume });
       setDone(true);
     } catch (err: unknown) {
@@ -59,9 +74,14 @@ export function ApplicationForm({
         <input
           className={inputClass}
           type="file"
-          accept=".pdf,.doc,.docx"
-          onChange={(e) => setResume(e.target.files?.[0] ?? null)}
+          accept="application/pdf,.pdf"
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            setResume(file);
+            setError(null);
+          }}
         />
+        <p className="mt-1 text-xs text-zinc-500">PDF only, up to 5MB.</p>
       </div>
       <button
         disabled={saving}

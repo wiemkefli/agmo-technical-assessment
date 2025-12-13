@@ -1,8 +1,10 @@
 "use client";
 
 import type { Application } from "@/lib/types";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
+import { useAuthStore } from "@/store/auth";
+import { getErrorMessage } from "@/lib/api";
 
 const STATUSES: Array<{ value: string; label: string }> = [
   { value: "submitted", label: "Submitted" },
@@ -100,6 +102,8 @@ export function ApplicationDetailsDialog({
             </div>
           </div>
 
+          <ResumeSection application={application} />
+
           <div>
             <div className="text-xs font-medium text-zinc-500">Message</div>
             <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
@@ -122,6 +126,120 @@ export function ApplicationDetailsDialog({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ResumeSection({ application }: { application: Application }) {
+  const { token, role } = useAuthStore();
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (role !== "employer") return null;
+
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const hasResume = Boolean(application.resume_path);
+
+  const canDownloadOrView =
+    Boolean(token) && Boolean(apiBaseUrl) && hasResume && !downloading;
+
+  const fetchResumeBlob = async (): Promise<Blob> => {
+    if (!token || !apiBaseUrl) {
+      throw new Error("Missing auth token or API base URL");
+    }
+
+    const res = await fetch(
+      `${apiBaseUrl}/employer/applications/${application.id}/resume`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`Download failed (${res.status})`);
+    }
+
+    return res.blob();
+  };
+
+  const download = async () => {
+    if (!token || !apiBaseUrl) return;
+    setDownloading(true);
+    setError(null);
+
+    try {
+      const blob = await fetchResumeBlob();
+      const url = URL.createObjectURL(blob);
+      const filename =
+        application.resume_original_name ?? `resume-${application.id}`;
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Failed to download resume"));
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const view = async () => {
+    if (!token || !apiBaseUrl) return;
+    setDownloading(true);
+    setError(null);
+
+    try {
+      const blob = await fetchResumeBlob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Failed to view resume"));
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="text-xs font-medium text-zinc-500">Resume</div>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        {hasResume ? (
+          <>
+            <div className="text-sm text-zinc-800 break-words [overflow-wrap:anywhere]">
+              {application.resume_original_name ?? "Resume attached"}
+            </div>
+            <button
+              type="button"
+              onClick={view}
+              disabled={!canDownloadOrView}
+              className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50"
+            >
+              {downloading ? "Loading..." : "View"}
+            </button>
+            <button
+              type="button"
+              onClick={download}
+              disabled={!canDownloadOrView}
+              className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50"
+            >
+              {downloading ? "Downloading..." : "Download"}
+            </button>
+          </>
+        ) : (
+          <div className="text-sm text-zinc-600">No resume uploaded.</div>
+        )}
+      </div>
+      {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
+      {!apiBaseUrl && (
+        <div className="mt-2 text-xs text-zinc-500">
+          Set `NEXT_PUBLIC_API_BASE_URL` to enable downloads.
+        </div>
+      )}
     </div>
   );
 }

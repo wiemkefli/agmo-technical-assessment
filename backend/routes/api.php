@@ -49,5 +49,6 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::delete('jobs/{job}', [EmployerJobController::class, 'destroy']);
     Route::get('jobs/{job}/applications', [EmployerJobController::class, 'applications']);
 
+    Route::get('applications/{application}/resume', [EmployerApplicationController::class, 'resume']);
     Route::patch('applications/{application}', [EmployerApplicationController::class, 'update']);
 });

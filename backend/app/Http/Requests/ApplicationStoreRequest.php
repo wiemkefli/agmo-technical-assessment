@@ -15,8 +15,8 @@ class ApplicationStoreRequest extends FormRequest
     {
         return [
             'message' => ['required', 'string'],
-            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            // 5MB max, PDF only.
+            'resume' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
         ];
     }
 }
-
