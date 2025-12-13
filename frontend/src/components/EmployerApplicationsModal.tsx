@@ -19,7 +19,9 @@ export function EmployerApplicationsModal({
   const { token } = useAuthStore();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   useLockBodyScroll(true);
 
@@ -28,13 +30,14 @@ export function EmployerApplicationsModal({
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    setError(null);
+    setLoadError(null);
+    setActionError(null);
     apiRequest<{ data: Application[] }>(`employer/jobs/${jobId}/applications`, {
       token,
     })
       .then((res) => alive && setApplications(res.data))
       .catch((e: unknown) =>
-        alive && setError(getErrorMessage(e, "Failed to load applications")),
+        alive && setLoadError(getErrorMessage(e, "Failed to load applications")),
       )
       .finally(() => alive && setLoading(false));
     return () => {
@@ -49,6 +52,36 @@ export function EmployerApplicationsModal({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
+
+  const updateStatus = async (applicationId: number, nextStatus: string) => {
+    if (!token) return;
+
+    const prev = applications;
+    setUpdatingId(applicationId);
+    setActionError(null);
+    setApplications((curr) =>
+      curr.map((a) => (a.id === applicationId ? { ...a, status: nextStatus } : a)),
+    );
+
+    try {
+      const res = await apiRequest<{ data: Application }>(
+        `employer/applications/${applicationId}`,
+        {
+          method: "PATCH",
+          token,
+          body: JSON.stringify({ status: nextStatus }),
+        },
+      );
+      setApplications((curr) =>
+        curr.map((a) => (a.id === applicationId ? res.data : a)),
+      );
+    } catch (e: unknown) {
+      setApplications(prev);
+      setActionError(getErrorMessage(e, "Failed to update status"));
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   return (
     <div
@@ -80,15 +113,24 @@ export function EmployerApplicationsModal({
         </div>
 
         {loading && <p className="mt-4 text-sm text-zinc-600">Loading.</p>}
-        {error && (
+        {loadError && (
           <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {error}
+            {loadError}
+          </div>
+        )}
+        {actionError && (
+          <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {actionError}
           </div>
         )}
 
-        {!loading && !error && (
+        {!loading && (
           <div className="mt-4">
-            <ApplicantsTable applications={applications} />
+            <ApplicantsTable
+              applications={applications}
+              updatingId={updatingId}
+              onUpdateStatus={updateStatus}
+            />
           </div>
         )}
       </div>

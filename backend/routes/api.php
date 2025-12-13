@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmployerApplicationController;
 use App\Http\Controllers\EmployerJobController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ProfileController;
@@ -45,4 +46,6 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::patch('jobs/{job}', [EmployerJobController::class, 'update']);
     Route::delete('jobs/{job}', [EmployerJobController::class, 'destroy']);
     Route::get('jobs/{job}/applications', [EmployerJobController::class, 'applications']);
+
+    Route::patch('applications/{application}', [EmployerApplicationController::class, 'update']);
 });

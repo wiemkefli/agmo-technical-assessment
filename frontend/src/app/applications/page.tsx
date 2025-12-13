@@ -40,14 +40,8 @@ export default function ApplicationsPage() {
     return cleanup;
   }, [reload]);
 
-  const appliedJobIds = useMemo(() => {
-    return new Set(applications.map((a) => a.job_id));
-  }, [applications]);
-
-  const jobs = useMemo(() => {
-    return applications
-      .map((a) => a.job)
-      .filter((j): j is Job => Boolean(j));
+  const appsWithJobs = useMemo(() => {
+    return applications.filter((a): a is Application & { job: Job } => Boolean(a.job));
   }, [applications]);
 
   return (
@@ -69,22 +63,26 @@ export default function ApplicationsPage() {
           </div>
         )}
 
-        {!loading && !error && jobs.length === 0 && (
+        {!loading && !error && appsWithJobs.length === 0 && (
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-700 shadow-sm">
             You haven&apos;t applied to any jobs yet.
           </div>
         )}
 
-        {jobs.length > 0 && (
+        {appsWithJobs.length > 0 && (
           <div className="grid grid-cols-1 gap-4">
-            {jobs.map((job) => (
+            {appsWithJobs.map((app) => (
               <button
-                key={job.id}
+                key={app.id}
                 type="button"
-                onClick={() => setSelectedJobId(job.id)}
+                onClick={() => setSelectedJobId(app.job.id)}
                 className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
               >
-                <JobCard job={job} applied={appliedJobIds.has(job.id)} showStatus={false} />
+                <JobCard
+                  job={app.job}
+                  applicationStatus={app.status}
+                  showStatus={false}
+                />
               </button>
             ))}
           </div>
@@ -102,4 +100,3 @@ export default function ApplicationsPage() {
     </Protected>
   );
 }
-

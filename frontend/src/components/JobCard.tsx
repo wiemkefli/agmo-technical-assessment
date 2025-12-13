@@ -4,6 +4,7 @@ import { formatSalary } from "@/lib/salary";
 export function JobCard({
   job,
   applied = false,
+  applicationStatus,
   showStatus = true,
   variant = "default",
   footer,
@@ -11,6 +12,7 @@ export function JobCard({
 }: {
   job: Job;
   applied?: boolean;
+  applicationStatus?: string;
   showStatus?: boolean;
   variant?: "default" | "compact" | "saved";
   footer?: React.ReactNode;
@@ -24,6 +26,34 @@ export function JobCard({
   const salary = formatSalary(job);
   const isCompact = variant === "compact";
   const isSaved = variant === "saved";
+
+  const applicationBadge = (() => {
+    const status = applicationStatus?.trim().toLowerCase() || null;
+    if (!status && !applied) return null;
+
+    const label = status
+      ? status.charAt(0).toUpperCase() + status.slice(1)
+      : "Applied";
+
+    const cls =
+      status === "submitted"
+        ? "bg-indigo-50 text-indigo-700"
+        : status === "reviewed"
+          ? "bg-amber-50 text-amber-700"
+          : status === "shortlisted"
+            ? "bg-emerald-50 text-emerald-700"
+            : status === "rejected"
+              ? "bg-rose-50 text-rose-700"
+              : status
+                ? "bg-zinc-100 text-zinc-700"
+                : "bg-indigo-50 text-indigo-700";
+
+    return (
+      <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
+        {label}
+      </span>
+    );
+  })();
 
   const company = job.employer?.company ?? job.employer?.name ?? null;
   const metaLine = (() => {
@@ -99,16 +129,12 @@ export function JobCard({
             >
               {job.title}
             </h3>
-            {applied && (
-              <span className="mt-1 shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                Applied
-              </span>
-            )}
+            {applicationBadge}
           </div>
 
           {isCompact ? (
             <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600 truncate">
-              {metaLine || "—"}
+              {metaLine || "-"}
             </p>
           ) : (
             <>
