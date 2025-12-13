@@ -20,10 +20,18 @@ export function JobCard({
   const salary = formatSalary(job);
   const isCompact = variant === "compact";
 
+  const company = job.employer?.company ?? job.employer?.name ?? null;
+  const metaLine = (() => {
+    const location = job.location ?? null;
+    const remote = job.is_remote ? "Remote" : null;
+    const parts = [company, location, remote].filter((p): p is string => Boolean(p));
+    return parts.join(" • ");
+  })();
+
   const salaryNode = salary ? (
     <p
       className={[
-        "mt-1 text-zinc-700",
+        "mt-1 text-zinc-700 truncate",
         isCompact ? "text-xs leading-4 min-h-[1rem]" : "text-sm leading-5 min-h-[1.25rem]",
       ].join(" ")}
     >
@@ -32,7 +40,7 @@ export function JobCard({
   ) : (
     <p
       className={[
-        "mt-1 select-none text-zinc-700 invisible",
+        "mt-1 select-none text-zinc-700 invisible truncate",
         isCompact ? "text-xs leading-4 min-h-[1rem]" : "text-sm leading-5 min-h-[1.25rem]",
       ].join(" ")}
     >
@@ -40,13 +48,11 @@ export function JobCard({
     </p>
   );
 
-  const company = job.employer?.company ?? job.employer?.name ?? null;
-
   return (
     <div
       className={[
         "group flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/70 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
-        isCompact ? "h-[7.5rem] p-4" : "h-[14rem] p-5",
+        isCompact ? "h-[7.3rem] p-4" : "h-[14rem] p-5",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3">
@@ -66,13 +72,21 @@ export function JobCard({
               </span>
             )}
           </div>
-          <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600">
-            {company ?? "Unknown company"}
-          </p>
-          <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600">
-            {job.location ?? "Remote / Flexible"}
-            {job.is_remote ? " - Remote" : ""}
-          </p>
+          {isCompact ? (
+            <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600 truncate">
+              {metaLine || "—"}
+            </p>
+          ) : (
+            <>
+              <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600">
+                {company ?? "Unknown company"}
+              </p>
+              <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600">
+                {job.location ?? "Remote / Flexible"}
+                {job.is_remote ? " - Remote" : ""}
+              </p>
+            </>
+          )}
           {salaryNode}
         </div>
         {showStatus && (
