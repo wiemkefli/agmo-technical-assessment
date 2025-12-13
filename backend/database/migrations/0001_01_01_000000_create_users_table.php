@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Keep it string for cross-DB compatibility; enforce allowed values via validation.
+            $table->string('role', 20)->default('applicant')->index();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -16,8 +16,12 @@ return new class extends Migration {
 
             $table->string('title');
             $table->text('description');
-            $table->string('location')->nullable();
-            $table->string('salary_range')->nullable(); // assessment-friendly
+            $table->string('location');
+
+            $table->unsignedInteger('salary_min');
+            $table->unsignedInteger('salary_max');
+            $table->string('salary_currency', 3);
+            $table->string('salary_period', 10); // month | year
             $table->boolean('is_remote')->default(false);
 
             // Keep as string for portability; validate values in code.
