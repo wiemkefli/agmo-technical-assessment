@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'applicant@example.com',
         ]);
 
-        $demoEmployer->profile()->update(['company' => 'Demo Company']);
+        $demoEmployer->employerProfile()->update(['company' => 'Demo Company']);
 
         $employers = User::factory()->employer()->count(3)->create();
         $applicants = User::factory()->applicant()->count(8)->create();

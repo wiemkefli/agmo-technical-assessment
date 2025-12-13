@@ -32,7 +32,7 @@ class JobController extends Controller
 
         $query = Job::query()
             ->where('status', 'published')
-            ->with(['employer.profile']);
+            ->with(['employer.employerProfile']);
 
         $this->jobSearchService->applyFilters($query, $filters);
 
@@ -55,6 +55,6 @@ class JobController extends Controller
             abort(404);
         }
 
-        return new JobResource($job->load(['employer.profile']));
+        return new JobResource($job->load(['employer.employerProfile']));
     }
 }

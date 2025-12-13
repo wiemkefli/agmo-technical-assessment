@@ -2,7 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\UserProfile;
+use App\Models\ApplicantProfile;
+use App\Models\EmployerProfile;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -47,12 +48,12 @@ class UserFactory extends Factory
     public function employer(): static
     {
         return $this->state(fn () => ['role' => 'employer'])
-            ->has(UserProfile::factory(), 'profile');
+            ->has(EmployerProfile::factory(), 'employerProfile');
     }
 
     public function applicant(): static
     {
         return $this->state(fn () => ['role' => 'applicant'])
-            ->has(UserProfile::factory()->state(['company' => null]), 'profile');
+            ->has(ApplicantProfile::factory(), 'applicantProfile');
     }
 }

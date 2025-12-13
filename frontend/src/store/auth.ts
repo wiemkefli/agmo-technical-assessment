@@ -79,10 +79,14 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           if (token) {
-            await apiRequest("auth/logout", {
-              method: "POST",
-              token,
-            });
+            try {
+              await apiRequest("auth/logout", {
+                method: "POST",
+                token,
+              });
+            } catch {
+              // best-effort logout; token may already be invalid/revoked
+            }
           }
         } finally {
           set({ user: null, token: null, role: null, loading: false });

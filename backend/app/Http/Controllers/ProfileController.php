@@ -10,18 +10,26 @@ class ProfileController extends Controller
 {
     public function show(Request $request)
     {
-        return new UserResource($request->user()->load('profile'));
+        return new UserResource($request->user()->load(['employerProfile', 'applicantProfile']));
     }
 
     public function update(ProfileUpdateRequest $request)
     {
         $user = $request->user();
-        $profile = $user->profile()->firstOrCreate([]);
+        $data = $request->validated();
 
-        $profile->fill($request->validated());
-        $profile->save();
+        if ($user->role === 'employer') {
+            $profile = $user->employerProfile()->firstOrCreate([
+                'company' => $user->name,
+            ]);
+            $profile->fill($data);
+            $profile->save();
+        } else {
+            $profile = $user->applicantProfile()->firstOrCreate([]);
+            $profile->fill($data);
+            $profile->save();
+        }
 
-        return new UserResource($user->refresh()->load('profile'));
+        return new UserResource($user->refresh()->load(['employerProfile', 'applicantProfile']));
     }
 }
-

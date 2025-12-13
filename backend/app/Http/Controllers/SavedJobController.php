@@ -18,7 +18,7 @@ class SavedJobController extends Controller
         $jobs = $request->user()
             ->savedJobs()
             ->where('jobs.status', 'published')
-            ->with(['employer.profile'])
+            ->with(['employer.employerProfile'])
             ->orderByDesc('saved_jobs.created_at')
             ->paginate($perPage);
 
@@ -46,7 +46,7 @@ class SavedJobController extends Controller
 
         $request->user()->savedJobs()->syncWithoutDetaching([$job->id]);
 
-        return (new JobResource($job->load(['employer.profile'])))
+        return (new JobResource($job->load(['employer.employerProfile'])))
             ->response()
             ->setStatusCode(201);
     }

@@ -8,24 +8,34 @@ import { useAuthStore } from "@/store/auth";
 export default function ProfilePage() {
   const { token, user, fetchMe } = useAuthStore();
   const [company, setCompany] = useState(user?.company ?? "");
+  const [website, setWebsite] = useState(user?.website ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [location, setLocation] = useState(user?.location ?? "");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setCompany(user?.company ?? "");
-  }, [user?.company]);
+    setWebsite(user?.website ?? "");
+    setPhone(user?.phone ?? "");
+    setLocation(user?.location ?? "");
+  }, [user?.company, user?.location, user?.phone, user?.website]);
 
   const save = async () => {
-    if (!token) return;
+    if (!token || !user) return;
     setSaving(true);
     setMessage(null);
     setError(null);
     try {
+      const payload =
+        user.role === "employer"
+          ? { company: company.trim() || null, website: website.trim() || null }
+          : { phone: phone.trim() || null, location: location.trim() || null };
       await apiRequest("profile", {
         method: "PATCH",
         token,
-        body: JSON.stringify({ company: company.trim() || null }),
+        body: JSON.stringify(payload),
       });
       await fetchMe();
       setMessage("Saved.");
@@ -69,15 +79,49 @@ export default function ProfilePage() {
           </div>
 
           {user?.role === "employer" && (
-            <div className="mt-4">
-              <label className="text-sm font-medium text-zinc-800">Company</label>
-              <input
-                className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder="Required for employers"
-                required
-              />
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-zinc-800">Company</label>
+                <input
+                  className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Required for employers"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-zinc-800">Website</label>
+                <input
+                  className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://company.com (optional)"
+                />
+              </div>
+            </div>
+          )}
+
+          {user?.role === "applicant" && (
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-zinc-800">Phone</label>
+                <input
+                  className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+60..."
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-zinc-800">Location</label>
+                <input
+                  className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="City (optional)"
+                />
+              </div>
             </div>
           )}
 

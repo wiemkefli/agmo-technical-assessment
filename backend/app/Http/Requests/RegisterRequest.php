@@ -19,6 +19,7 @@ class RegisterRequest extends FormRequest
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'role' => ['required', 'string', 'in:employer,applicant'],
             'company' => ['nullable', 'string', 'min:2', 'max:255', 'required_if:role,employer'],
+            'website' => ['nullable', 'url', 'max:255'],
         ];
     }
 }

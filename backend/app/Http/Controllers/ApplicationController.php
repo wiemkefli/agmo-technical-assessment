@@ -19,7 +19,7 @@ class ApplicationController extends Controller
     {
         $applications = Application::query()
             ->where('applicant_id', $request->user()->id)
-            ->with(['job.employer.profile'])
+            ->with(['job.employer.employerProfile'])
             ->latest()
             ->get();
 

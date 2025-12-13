@@ -22,13 +22,18 @@ class AuthController extends Controller
             'role' => $data['role'],
         ]);
 
-        $user->profile()->create([
-            'company' => $data['company'] ?? null,
-        ]);
+        if ($user->role === 'employer') {
+            $user->employerProfile()->create([
+                'company' => $data['company'],
+                'website' => $data['website'] ?? null,
+            ]);
+        } else {
+            $user->applicantProfile()->create([]);
+        }
 
         $token = $user->createToken('auth')->plainTextToken;
 
-        $user->load('profile');
+        $user->load(['employerProfile', 'applicantProfile']);
 
         return (new UserResource($user))
             ->additional(['token' => $token])
@@ -48,7 +53,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth')->plainTextToken;
 
-        $user->load('profile');
+        $user->load(['employerProfile', 'applicantProfile']);
 
         return (new UserResource($user))
             ->additional(['token' => $token])
@@ -67,6 +72,6 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return new UserResource($request->user()->load('profile'));
+        return new UserResource($request->user()->load(['employerProfile', 'applicantProfile']));
     }
 }
