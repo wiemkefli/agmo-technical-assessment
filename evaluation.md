@@ -79,7 +79,7 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 | **Bonus: Email notifications** | **NOT FOUND** | No mail/notification sending logic found (only default `Notifiable` trait reference) |
 | Bonus: Pagination in job listings | **PASS** | Backend uses `paginate()`; frontend supports `page`/`per_page` (`backend/app/Http/Controllers/JobController.php`, `frontend/src/app/jobs/JobsClient.tsx`) |
 | Bonus: Resume file upload | **PASS** | Profile resume endpoints + application resume upload + employer download (`backend/routes/api.php:32`, `backend/app/Services/ApplicationService.php:44`) |
-| Bonus: Unit/feature tests (backend/frontend) | **PARTIAL** | Backend tests exist and pass (`backend/tests/Feature/ResumeUploadTest.php:51`, `backend/tests/Feature/ProfileResumeTest.php`); no meaningful frontend tests found |
+| Bonus: Unit/feature tests (backend/frontend) | **PASS** | Backend feature tests cover auth/roles, employer ownership, application rules, saved jobs, recommendations, resume flows, and API contract (`backend/tests/Feature/AuthFlowTest.php`, `backend/tests/Feature/EmployerJobAuthorizationTest.php`, `backend/tests/Feature/ApplicantApplicationRulesTest.php`, `backend/tests/Feature/SavedJobsTest.php`, `backend/tests/Feature/RecommendationsTest.php`, `backend/tests/Feature/PublicJobsContractTest.php`) |
 
 ## 4. Top Issues (highest impact first)
 
@@ -92,7 +92,6 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 
 ## 5. Nice-to-have improvements
 
-- Add feature tests for core spec flows (auth, employer job CRUD ownership, applicant apply-to-published-only) beyond resume tests (`backend/tests/*`)
 - Add a minimal frontend env example (`frontend/.env.example`) documenting `NEXT_PUBLIC_API_BASE_URL`
 - Tighten validation (e.g., trim/length constraints for application `message`)
 - Consider storing auth tokens in more secure mechanisms depending on threat model (localStorage is XSS-sensitive)
