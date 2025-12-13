@@ -49,7 +49,7 @@ class ProfileController extends Controller
 
         $profile = $user->applicantProfile()->firstOrCreate([]);
 
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if ($profile->resume_path && $disk->exists($profile->resume_path)) {
             $disk->delete($profile->resume_path);
@@ -59,7 +59,7 @@ class ProfileController extends Controller
         $path = $file->storeAs(
             "applicant-resumes/{$user->id}",
             Str::uuid() . '.pdf',
-            'public'
+            'local'
         );
 
         $profile->resume_path = $path;
@@ -83,7 +83,7 @@ class ProfileController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
         if (! $disk->exists($profile->resume_path)) {
             abort(404);
         }
@@ -102,7 +102,7 @@ class ProfileController extends Controller
 
         $profile = $user->applicantProfile()->firstOrCreate([]);
 
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
         if ($profile->resume_path && $disk->exists($profile->resume_path)) {
             $disk->delete($profile->resume_path);
         }

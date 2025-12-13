@@ -22,7 +22,7 @@ class EmployerApplicationController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
         if (! $disk->exists($application->resume_path)) {
             abort(404);
         }

@@ -16,7 +16,7 @@ class ProfileResumeTest extends TestCase
 
     public function test_applicant_can_upload_and_download_profile_resume(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $applicant = User::factory()->applicant()->create();
         Sanctum::actingAs($applicant);
@@ -29,7 +29,7 @@ class ProfileResumeTest extends TestCase
 
         $profile = $applicant->refresh()->applicantProfile()->first();
         $this->assertNotNull($profile?->resume_path);
-        Storage::disk('public')->assertExists($profile->resume_path);
+        Storage::disk('local')->assertExists($profile->resume_path);
 
         $download = $this->get('/api/profile/resume');
         $download->assertOk();
@@ -37,7 +37,7 @@ class ProfileResumeTest extends TestCase
 
     public function test_applicant_can_apply_using_saved_profile_resume_and_employer_can_download_application_resume(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $employer = User::factory()->employer()->create();
         $job = Job::factory()->published()->for($employer, 'employer')->create();
@@ -60,13 +60,10 @@ class ProfileResumeTest extends TestCase
         $apply->assertStatus(201);
 
         $applicationId = $apply->json('data.id');
-        $applicationResumePath = $apply->json('data.resume_path');
+        $applicationHasResume = $apply->json('data.has_resume');
 
         $this->assertNotNull($applicationId);
-        $this->assertNotNull($applicationResumePath);
-        $this->assertNotSame($profilePath, $applicationResumePath);
-
-        Storage::disk('public')->assertExists($applicationResumePath);
+        $this->assertTrue((bool) $applicationHasResume);
 
         Sanctum::actingAs($employer);
         $download = $this->get("/api/employer/applications/{$applicationId}/resume");
@@ -75,7 +72,7 @@ class ProfileResumeTest extends TestCase
 
     public function test_applicant_can_apply_without_resume(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $employer = User::factory()->employer()->create();
         $job = Job::factory()->published()->for($employer, 'employer')->create();
@@ -88,7 +85,6 @@ class ProfileResumeTest extends TestCase
         ]);
 
         $apply->assertStatus(201);
-        $this->assertNull($apply->json('data.resume_path'));
+        $this->assertFalse((bool) $apply->json('data.has_resume'));
     }
 }
-

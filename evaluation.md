@@ -24,7 +24,7 @@
 
 ### Employer flow
 
-- Register/login as `employer` (issues Sanctum token) → redirected to “My Jobs” (`backend/routes/api.php:14`, `backend/app/Http/Controllers/AuthController.php:33`, `frontend/src/app/dashboard/page.tsx`)
+- Register/login as `employer` (issues Sanctum token) -> redirected to "My Jobs" (`backend/routes/api.php:14`, `backend/app/Http/Controllers/AuthController.php:33`, `frontend/src/app/dashboard/page.tsx`)
 - CRUD own jobs (draft/published) via `/api/employer/jobs*` guarded by role middleware + policies (`backend/routes/api.php:48`, `backend/app/Policies/JobPolicy.php:12`, `backend/app/Policies/JobPolicy.php:17`)
 - View applicants for a job; update application status; download applicant resume if present (`backend/routes/api.php:54`, `backend/routes/api.php:59`, `backend/app/Http/Controllers/EmployerApplicationController.php:17`)
 
@@ -90,20 +90,6 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 - **Where to fix**: add `README.md` at repo root; add `postman/*.postman_collection.json`
 - **Suggested fix**: document env vars (`NEXT_PUBLIC_API_BASE_URL`, DB), migrations/seeds (`php artisan migrate --seed`), and include a ready-to-run Postman collection for all `/api/*` routes
 
-### 4.2 Public jobs API leaks employer email
-
-- **Symptom**: `JobResource` returns `employer => UserResource`, and `UserResource` includes `email` (`backend/app/Http/Resources/JobResource.php:37`, `backend/app/Http/Resources/UserResource.php:16`)
-- **Why it’s risky**: Anyone hitting `GET /api/jobs` can see employer emails
-- **Where to fix**: `backend/app/Http/Resources/UserResource.php` and/or `backend/app/Http/Resources/JobResource.php`
-- **Suggested fix**: create a “public employer” resource (company + website only) for job listings; keep email only for self/employer-authorized contexts
-
-### 4.3 Resumes stored on `public` disk + `resume_path` returned
-
-- **Symptom**: storage uses `Storage::disk('public')` and API returns `resume_path` (`backend/app/Http/Controllers/ProfileController.php:52`, `backend/app/Http/Resources/ApplicationResource.php:17`)
-- **Why it’s risky**: paths can enable direct file access if `storage:link` is used; also leaks internal structure
-- **Where to fix**: `backend/app/Services/ApplicationService.php` + resources
-- **Suggested fix**: store resumes on private disk; don’t expose `resume_path` publicly—return a boolean or signed download URL
-
 ## 5. Nice-to-have improvements
 
 - Add feature tests for core spec flows (auth, employer job CRUD ownership, applicant apply-to-published-only) beyond resume tests (`backend/tests/*`)
@@ -116,4 +102,3 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 **Does not meet spec**
 
 - Missing required deliverables: no root `README.md`, no Postman/Insomnia collection
-- Public API currently exposes employer emails in job listings

@@ -34,7 +34,7 @@ class JobResource extends JsonResource
             'published_at' => $this->published_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'employer' => new UserResource($this->whenLoaded('employer')),
+            'employer' => $this->whenLoaded('employer', fn () => new PublicEmployerResource($this->employer)),
         ];
     }
 }

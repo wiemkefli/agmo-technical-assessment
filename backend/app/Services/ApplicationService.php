@@ -39,7 +39,7 @@ class ApplicationService
 
         if (isset($data['resume']) && $data['resume']) {
             $file = $data['resume'];
-            $path = $file->store('resumes', 'public');
+            $path = $file->store('resumes', 'local');
 
             $application->resume_path = $path;
             $application->resume_original_name = $file->getClientOriginalName();
@@ -54,7 +54,7 @@ class ApplicationService
                 ]);
             }
 
-            $disk = Storage::disk('public');
+            $disk = Storage::disk('local');
             if (! $disk->exists($profile->resume_path)) {
                 throw ValidationException::withMessages([
                     'resume' => ['Saved resume file is missing. Please upload it again.'],

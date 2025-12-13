@@ -16,7 +16,7 @@ class ResumeUploadTest extends TestCase
 
     public function test_applicant_can_upload_resume_and_employer_can_download_it(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $employer = User::factory()->employer()->create();
         $job = Job::factory()->published()->for($employer, 'employer')->create();
@@ -32,12 +32,12 @@ class ResumeUploadTest extends TestCase
         $applyResponse->assertStatus(201);
 
         $applicationId = $applyResponse->json('data.id');
-        $resumePath = $applyResponse->json('data.resume_path');
+        $hasResume = $applyResponse->json('data.has_resume');
+        $resumeOriginalName = $applyResponse->json('data.resume_original_name');
 
         $this->assertNotNull($applicationId);
-        $this->assertNotNull($resumePath);
-
-        Storage::disk('public')->assertExists($resumePath);
+        $this->assertTrue((bool) $hasResume);
+        $this->assertSame('resume.pdf', $resumeOriginalName);
 
         Sanctum::actingAs($employer);
 
@@ -50,7 +50,7 @@ class ResumeUploadTest extends TestCase
 
     public function test_other_employer_cannot_download_resume(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $employer = User::factory()->employer()->create();
         $job = Job::factory()->published()->for($employer, 'employer')->create();
@@ -73,4 +73,3 @@ class ResumeUploadTest extends TestCase
         $downloadResponse->assertStatus(403);
     }
 }
-

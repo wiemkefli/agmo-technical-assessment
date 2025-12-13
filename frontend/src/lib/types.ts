@@ -43,7 +43,7 @@ export interface Application {
   applicant_id: number;
   message: string;
   status: string;
-  resume_path: string | null;
+  has_resume: boolean;
   resume_original_name: string | null;
   resume_mime: string | null;
   resume_size: number | null;

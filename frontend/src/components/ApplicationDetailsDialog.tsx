@@ -138,7 +138,7 @@ function ResumeSection({ application }: { application: Application }) {
   if (role !== "employer") return null;
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const hasResume = Boolean(application.resume_path);
+  const hasResume = Boolean(application.has_resume);
 
   const canDownloadOrView =
     Boolean(token) && Boolean(apiBaseUrl) && hasResume && !downloading;
