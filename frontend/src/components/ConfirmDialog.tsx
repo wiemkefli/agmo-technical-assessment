@@ -47,8 +47,14 @@ export function ConfirmDialog({
         className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
-        {description && <p className="mt-1 text-sm text-zinc-600">{description}</p>}
+        <h2 className="text-lg font-semibold text-zinc-900 break-words [overflow-wrap:anywhere]">
+          {title}
+        </h2>
+        {description && (
+          <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
+            {description}
+          </p>
+        )}
 
         <div className="mt-5 flex items-center justify-end gap-2">
           <button
@@ -72,4 +78,3 @@ export function ConfirmDialog({
     </div>
   );
 }
-

@@ -9,10 +9,12 @@ const STATUSES: Array<{ value: string; label: string }> = [
 
 export function ApplicantsTable({
   applications,
+  onSelect,
   onUpdateStatus,
   updatingId,
 }: {
   applications: Application[];
+  onSelect?: (application: Application) => void;
   onUpdateStatus?: (applicationId: number, status: string) => void;
   updatingId?: number | null;
 }) {
@@ -22,7 +24,13 @@ export function ApplicantsTable({
 
   return (
     <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white shadow-sm">
-      <table className="min-w-full text-left text-sm">
+      <table className="w-full table-fixed text-left text-sm">
+        <colgroup>
+          <col className="w-48" />
+          <col className="w-56" />
+          <col className="w-40" />
+          <col />
+        </colgroup>
         <thead className="bg-zinc-50 text-zinc-700">
           <tr>
             <th className="px-4 py-2 font-medium">Applicant</th>
@@ -33,9 +41,20 @@ export function ApplicantsTable({
         </thead>
         <tbody>
           {applications.map((app) => (
-            <tr key={app.id} className="border-t">
-              <td className="px-4 py-2">{app.applicant?.name ?? app.applicant_id}</td>
-              <td className="px-4 py-2">{app.applicant?.email ?? "-"}</td>
+            <tr
+              key={app.id}
+              className={[
+                "border-t",
+                onSelect ? "cursor-pointer transition hover:bg-zinc-50" : "",
+              ].join(" ")}
+              onClick={onSelect ? () => onSelect(app) : undefined}
+            >
+              <td className="px-4 py-2 truncate">
+                {app.applicant?.name ?? app.applicant_id}
+              </td>
+              <td className="px-4 py-2 truncate">
+                {app.applicant?.email ?? "-"}
+              </td>
               <td className="px-4 py-2">
                 {onUpdateStatus ? (
                   <select
@@ -43,6 +62,7 @@ export function ApplicantsTable({
                     value={app.status}
                     disabled={updatingId === app.id}
                     onChange={(e) => onUpdateStatus(app.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {STATUSES.map((s) => (
                       <option key={s.value} value={s.value}>
@@ -54,7 +74,14 @@ export function ApplicantsTable({
                   <span className="capitalize">{app.status}</span>
                 )}
               </td>
-              <td className="px-4 py-2">{app.message}</td>
+              <td className="px-4 py-2 align-top">
+                <div
+                  className="w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] line-clamp-2"
+                  title={app.message}
+                >
+                  {app.message}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

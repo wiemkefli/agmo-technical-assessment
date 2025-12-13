@@ -101,11 +101,11 @@ export function JobModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 break-words [overflow-wrap:anywhere]">
               {job?.title ?? "Job Details"}
             </h2>
             {job && (
-              <p className="mt-1 text-sm text-zinc-600">
+              <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
                 {job.location ?? "Remote / Flexible"}
                 {job.is_remote ? " • Remote" : ""}
                 {salary ? ` • ${salary}` : ""}
@@ -131,7 +131,7 @@ export function JobModal({
         {job && (
           <div className="mt-4 space-y-6">
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-              <p className="whitespace-pre-line leading-relaxed text-zinc-800">
+              <p className="whitespace-pre-wrap leading-relaxed text-zinc-800 break-words [overflow-wrap:anywhere]">
                 {job.description}
               </p>
             </div>
@@ -166,4 +166,3 @@ export function JobModal({
     </div>
   );
 }
-

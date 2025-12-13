@@ -100,11 +100,11 @@ export function EmployerJobModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 break-words [overflow-wrap:anywhere]">
               {mode === "create" ? "Create Job" : job?.title ?? "Edit Job"}
             </h2>
             {mode === "edit" && job && (
-              <p className="mt-1 text-sm text-zinc-600">
+              <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
                 {job.location ?? "Remote / Flexible"}
                 {job.is_remote ? "  Remote" : ""}
                 {formatSalary(job) ? `  ${formatSalary(job)}` : ""}
