@@ -75,11 +75,37 @@ export function ApplicantsTable({
                 )}
               </td>
               <td className="px-4 py-2 align-top">
-                <div
-                  className="w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] line-clamp-2"
-                  title={app.message}
-                >
-                  {app.message}
+                <div className="flex items-start justify-between gap-3">
+                  <div
+                    className="min-w-0 flex-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] line-clamp-2"
+                    title={app.message}
+                  >
+                    {app.message}
+                  </div>
+                  {onSelect && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(app);
+                      }}
+                      className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100"
+                    >
+                      View
+                      <svg
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.21 14.77a.75.75 0 0 1 .02-1.06L10.94 10 7.23 6.29a.75.75 0 1 1 1.06-1.06l4.24 4.24a.75.75 0 0 1 0 1.06l-4.24 4.24a.75.75 0 0 1-1.08.02Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

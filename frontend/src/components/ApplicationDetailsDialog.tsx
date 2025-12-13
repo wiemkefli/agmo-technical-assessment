@@ -103,9 +103,11 @@ export function ApplicationDetailsDialog({
           <div>
             <div className="text-xs font-medium text-zinc-500">Message</div>
             <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-              <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-zinc-800">
-                {application.message}
-              </p>
+              <div className="max-h-[22rem] overflow-y-auto pr-1">
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-zinc-800">
+                  {application.message}
+                </p>
+              </div>
             </div>
           </div>
         </div>

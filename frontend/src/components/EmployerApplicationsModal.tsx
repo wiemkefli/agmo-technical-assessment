@@ -122,27 +122,27 @@ export function EmployerApplicationsModal({
           </div>
 
           {loading && <p className="mt-4 text-sm text-zinc-600">Loading.</p>}
-          {loadError && (
-            <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {loadError}
-            </div>
-          )}
-          {actionError && (
-            <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {actionError}
-            </div>
-          )}
+        {loadError && (
+          <div className="mt-4 max-h-40 overflow-y-auto rounded-md border border-red-200 bg-red-50 p-3 pr-1 text-sm text-red-700 break-words [overflow-wrap:anywhere]">
+            {loadError}
+          </div>
+        )}
+        {actionError && (
+          <div className="mt-4 max-h-40 overflow-y-auto rounded-md border border-red-200 bg-red-50 p-3 pr-1 text-sm text-red-700 break-words [overflow-wrap:anywhere]">
+            {actionError}
+          </div>
+        )}
 
-          {!loading && (
-            <div className="mt-4">
-              <ApplicantsTable
-                applications={applications}
-                updatingId={updatingId}
-                onUpdateStatus={updateStatus}
-                onSelect={setSelected}
-              />
-            </div>
-          )}
+        {!loading && (
+          <div className="mt-4">
+            <ApplicantsTable
+              applications={applications}
+              updatingId={updatingId}
+              onUpdateStatus={updateStatus}
+              onSelect={setSelected}
+            />
+          </div>
+        )}
         </div>
       </div>
 

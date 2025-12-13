@@ -51,7 +51,7 @@ export function ConfirmDialog({
           {title}
         </h2>
         {description && (
-          <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
+          <p className="mt-1 max-h-40 overflow-y-auto pr-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
             {description}
           </p>
         )}

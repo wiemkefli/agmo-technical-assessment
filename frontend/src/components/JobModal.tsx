@@ -100,12 +100,20 @@ export function JobModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 line-clamp-2">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 line-clamp-2 break-words [overflow-wrap:anywhere]">
               {job?.title ?? "Job Details"}
             </h2>
+            {job?.employer && (
+              <p
+                className="mt-1 text-sm font-medium text-zinc-800 truncate"
+                title={job.employer.company ?? job.employer.name}
+              >
+                {job.employer.company ?? job.employer.name}
+              </p>
+            )}
             {job && (
-              <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
+              <p className="mt-1 text-sm text-zinc-600 line-clamp-2 break-words [overflow-wrap:anywhere]">
                 {job.location ?? "Remote / Flexible"}
                 {job.is_remote ? " • Remote" : ""}
                 {salary ? ` • ${salary}` : ""}
@@ -114,7 +122,7 @@ export function JobModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+            className="shrink-0 rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
             aria-label="Close"
           >
             x
@@ -131,9 +139,11 @@ export function JobModal({
         {job && (
           <div className="mt-4 space-y-6">
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-              <p className="whitespace-pre-wrap leading-relaxed text-zinc-800 break-words [overflow-wrap:anywhere]">
-                {job.description}
-              </p>
+              <div className="max-h-[22rem] overflow-y-auto pr-1">
+                <p className="whitespace-pre-wrap leading-relaxed text-zinc-800 break-words [overflow-wrap:anywhere]">
+                  {job.description}
+                </p>
+              </div>
             </div>
 
             {role === "applicant" && (

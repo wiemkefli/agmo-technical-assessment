@@ -6,7 +6,6 @@ import type { Job, JobFormPayload } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { JobForm } from "@/components/JobForm";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
-import { formatSalary } from "@/lib/salary";
 
 export function EmployerJobModal({
   mode,
@@ -23,7 +22,6 @@ export function EmployerJobModal({
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(mode === "edit");
   const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   useLockBodyScroll(true);
 
@@ -72,21 +70,6 @@ export function EmployerJobModal({
     onClose();
   };
 
-  const handleDelete = async () => {
-    if (!token || !jobId) return;
-    setDeleting(true);
-    setError(null);
-    try {
-      await apiRequest(`employer/jobs/${jobId}`, { method: "DELETE", token });
-      onDone();
-      onClose();
-    } catch (e: unknown) {
-      setError(getErrorMessage(e, "Failed to delete job"));
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
@@ -99,28 +82,12 @@ export function EmployerJobModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold tracking-tight text-zinc-900 line-clamp-2">
               {mode === "create" ? "Create Job" : job?.title ?? "Edit Job"}
             </h2>
-            {mode === "edit" && job && (
-              <p className="mt-1 text-sm text-zinc-600 break-words [overflow-wrap:anywhere]">
-                {job.location ?? "Remote / Flexible"}
-                {job.is_remote ? "  Remote" : ""}
-                {formatSalary(job) ? `  ${formatSalary(job)}` : ""}
-              </p>
-            )}
           </div>
-          <div className="flex items-center gap-2">
-            {mode === "edit" && (
-              <button
-                onClick={handleDelete}
-                disabled={deleting || loading}
-                className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50"
-              >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
-            )}
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={onClose}
               className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
@@ -133,7 +100,7 @@ export function EmployerJobModal({
 
         {loading && <p className="mt-4 text-sm text-zinc-600">Loading.</p>}
         {error && (
-          <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="mt-4 max-h-40 overflow-y-auto rounded-md border border-red-200 bg-red-50 p-3 pr-1 text-sm text-red-700 break-words [overflow-wrap:anywhere]">
             {error}
           </div>
         )}
