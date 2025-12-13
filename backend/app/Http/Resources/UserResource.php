@@ -13,7 +13,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'role' => $this->role,
-            'company' => $this->employerProfile?->company,
+            'company' => $this->role === 'employer' ? $this->name : null,
             'website' => $this->employerProfile?->website,
             'phone' => $this->applicantProfile?->phone,
             'location' => $this->applicantProfile?->location,

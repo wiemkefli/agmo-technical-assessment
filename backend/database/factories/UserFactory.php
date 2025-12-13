@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\ApplicantProfile;
 use App\Models\EmployerProfile;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -48,14 +47,23 @@ class UserFactory extends Factory
 
     public function employer(): static
     {
-        return $this->state(fn () => ['role' => 'employer'])
-            ->has(EmployerProfile::factory(), 'employerProfile')
-            ->afterCreating(function (User $user) {
-                $company = $user->employerProfile()->value('company');
-                if ($company && $user->name !== $company) {
-                    $user->updateQuietly(['name' => $company]);
-                }
-            });
+        return $this->state(fn () => [
+            'role' => 'employer',
+            'name' => fake()->randomElement([
+                'Acme Labs',
+                'Northwind Trading',
+                'Contoso Solutions',
+                'BlueSky Logistics',
+                'Evergreen Health',
+                'Summit Retail Group',
+                'Pioneer Manufacturing',
+                'Cedar & Co.',
+                'BrightPath Education',
+                'Oceanview Hospitality',
+                'Silverline Finance',
+                'Greenfield Energy',
+            ]),
+        ])->has(EmployerProfile::factory(), 'employerProfile');
     }
 
     public function applicant(): static

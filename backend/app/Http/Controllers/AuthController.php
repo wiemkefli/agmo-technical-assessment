@@ -24,7 +24,6 @@ class AuthController extends Controller
 
         if ($user->role === 'employer') {
             $user->employerProfile()->create([
-                'company' => $data['company'],
                 'website' => $data['website'] ?? null,
             ]);
         } else {

@@ -20,14 +20,12 @@ export default function RegisterPage() {
     clearError();
     try {
       const trimmedPrimary = primaryField.trim();
-      const isEmployer = selectedRole === "employer";
       await register({
         name: trimmedPrimary,
         email,
         password,
         password_confirmation: passwordConfirmation,
         role: selectedRole,
-        company: isEmployer ? trimmedPrimary : undefined,
       });
       const currentRole = useAuthStore.getState().role;
       router.push(currentRole === "employer" ? "/employer/jobs" : "/jobs");

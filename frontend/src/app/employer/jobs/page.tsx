@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Protected } from "@/components/Protected";
-import { apiPaginated } from "@/lib/api";
+import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
 import type { Job, PaginatedResponse } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { JobCard } from "@/components/JobCard";
 import { EmployerJobModal } from "@/components/EmployerJobModal";
 import { EmployerApplicationsModal } from "@/components/EmployerApplicationsModal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function EmployerJobsPage() {
   const { token } = useAuthStore();
@@ -18,6 +19,8 @@ export default function EmployerJobsPage() {
   const [applicationsJobId, setApplicationsJobId] = useState<number | null>(
     null,
   );
+  const [deleteJobId, setDeleteJobId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const reloadJobs = useCallback(() => {
     if (!token) return;
@@ -46,6 +49,29 @@ export default function EmployerJobsPage() {
     return data.data.find((j) => j.id === applicationsJobId)?.title;
   }, [applicationsJobId, data]);
 
+  const selectedDeleteTitle = useMemo(() => {
+    if (!deleteJobId || !data) return undefined;
+    return data.data.find((j) => j.id === deleteJobId)?.title;
+  }, [deleteJobId, data]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!token || deleteJobId === null) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await apiRequest(`employer/jobs/${deleteJobId}`, {
+        method: "DELETE",
+        token,
+      });
+      setDeleteJobId(null);
+      reloadJobs();
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Failed to delete job"));
+    } finally {
+      setDeleting(false);
+    }
+  }, [token, deleteJobId, reloadJobs]);
+
   return (
     <Protected roles={["employer"]}>
       <div className="space-y-4">
@@ -64,7 +90,8 @@ export default function EmployerJobsPage() {
                 job={job}
                 onClick={() => setEditJobId(job.id)}
                 footer={
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -106,6 +133,31 @@ export default function EmployerJobsPage() {
                       </svg>
                       Applications
                     </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteJobId(job.id);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:bg-rose-100 disabled:opacity-50"
+                      disabled={deleting}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-4 w-4"
+                      >
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M7 6l1 14h8l1-14" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                      </svg>
+                      Delete
+                    </button>
                   </div>
                 }
               />
@@ -130,6 +182,23 @@ export default function EmployerJobsPage() {
           onClose={() => setApplicationsJobId(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={deleteJobId !== null}
+        title="Delete job?"
+        description={
+          selectedDeleteTitle
+            ? `This will permanently delete “${selectedDeleteTitle}”.`
+            : "This will permanently delete this job."
+        }
+        confirmLabel="Delete"
+        confirming={deleting}
+        onCancel={() => {
+          if (deleting) return;
+          setDeleteJobId(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </Protected>
   );
 }

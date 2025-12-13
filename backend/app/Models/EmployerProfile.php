@@ -12,7 +12,6 @@ class EmployerProfile extends Model
 
     protected $fillable = [
         'user_id',
-        'company',
         'website',
     ];
 
@@ -21,4 +20,3 @@ class EmployerProfile extends Model
         return $this->belongsTo(User::class);
     }
 }
-

@@ -19,7 +19,6 @@ interface AuthState {
     password: string;
     password_confirmation: string;
     role: Role;
-    company?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;

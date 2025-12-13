@@ -15,7 +15,6 @@ return new class extends Migration {
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->string('company');
             $table->string('website')->nullable();
 
             $table->timestamps();
@@ -27,4 +26,3 @@ return new class extends Migration {
         Schema::dropIfExists('employer_profiles');
     }
 };
-
