@@ -5,20 +5,29 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, role, logout } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const homeHref =
     user && role === "employer" ? "/employer/jobs" : "/jobs";
 
   const handleLogout = async () => {
-    await logout();
-    router.push("/login");
+    setSigningOut(true);
+    try {
+      await logout();
+      router.push("/login");
+    } finally {
+      setSigningOut(false);
+      setConfirmLogoutOpen(false);
+    }
   };
 
   useEffect(() => {
@@ -66,7 +75,8 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+    <>
+      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <div className="flex items-center gap-3">
           <Link
@@ -225,7 +235,7 @@ export function Navbar() {
                     type="button"
                     onClick={() => {
                       setMenuOpen(false);
-                      handleLogout();
+                      setConfirmLogoutOpen(true);
                     }}
                     className="block w-full px-3 py-2 text-left text-sm font-medium text-rose-600 hover:bg-rose-50"
                   >
@@ -237,6 +247,24 @@ export function Navbar() {
           )}
         </div>
       </div>
-    </header>
+      </header>
+
+      <ConfirmDialog
+        open={confirmLogoutOpen}
+        title="Sign out?"
+        description="You will be returned to the login page."
+        confirmLabel="Sign out"
+        cancelLabel="Cancel"
+        confirming={signingOut}
+        onCancel={() => {
+          if (signingOut) return;
+          setConfirmLogoutOpen(false);
+        }}
+        onConfirm={() => {
+          if (signingOut) return;
+          handleLogout();
+        }}
+      />
+    </>
   );
 }
