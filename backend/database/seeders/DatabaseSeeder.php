@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $demoEmployer = User::factory()->employer()->create([
-            'name' => 'Demo Employer',
+            'name' => 'Demo Company',
             'email' => 'employer@example.com',
         ]);
 
@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $demoEmployer->employerProfile()->update(['company' => 'Demo Company']);
+        $demoEmployer->updateQuietly(['name' => 'Demo Company']);
 
         $employers = User::factory()->employer()->count(3)->create();
         $applicants = User::factory()->applicant()->count(8)->create();

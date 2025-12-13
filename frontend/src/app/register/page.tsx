@@ -9,9 +9,8 @@ import type { Role } from "@/lib/types";
 export default function RegisterPage() {
   const router = useRouter();
   const { register, loading, error, clearError } = useAuthStore();
-  const [name, setName] = useState("");
+  const [primaryField, setPrimaryField] = useState("");
   const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [selectedRole, setSelectedRole] = useState<Role>("applicant");
@@ -20,13 +19,15 @@ export default function RegisterPage() {
     e.preventDefault();
     clearError();
     try {
+      const trimmedPrimary = primaryField.trim();
+      const isEmployer = selectedRole === "employer";
       await register({
-        name,
+        name: trimmedPrimary,
         email,
         password,
         password_confirmation: passwordConfirmation,
         role: selectedRole,
-        company: selectedRole === "employer" ? company.trim() || undefined : undefined,
+        company: isEmployer ? trimmedPrimary : undefined,
       });
       const currentRole = useAuthStore.getState().role;
       router.push(currentRole === "employer" ? "/employer/jobs" : "/jobs");
@@ -51,11 +52,29 @@ export default function RegisterPage() {
       )}
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
         <div>
-          <label className="text-sm font-medium text-zinc-800">Name</label>
+          <label className="text-sm font-medium text-zinc-800">Role</label>
+          <select
+            className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            value={selectedRole}
+            onChange={(e) => {
+              const nextRole = e.target.value as Role;
+              setSelectedRole(nextRole);
+            }}
+          >
+            <option value="applicant">Applicant</option>
+            <option value="employer">Employer</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-zinc-800">
+            {selectedRole === "employer" ? "Company name" : "Name"}
+          </label>
           <input
             className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={primaryField}
+            onChange={(e) => setPrimaryField(e.target.value)}
+            placeholder={selectedRole === "employer" ? "Acme Inc." : "Jane Doe"}
+            autoComplete="name"
             required
           />
         </div>
@@ -66,6 +85,7 @@ export default function RegisterPage() {
             className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
             required
           />
         </div>
@@ -77,6 +97,7 @@ export default function RegisterPage() {
               className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
           </div>
@@ -87,36 +108,11 @@ export default function RegisterPage() {
               className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
               value={passwordConfirmation}
               onChange={(e) => setPasswordConfirmation(e.target.value)}
+              autoComplete="new-password"
               required
             />
           </div>
         </div>
-        <div>
-          <label className="text-sm font-medium text-zinc-800">Role</label>
-          <select
-            className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            value={selectedRole}
-            onChange={(e) => {
-              const nextRole = e.target.value as Role;
-              setSelectedRole(nextRole);
-              if (nextRole !== "employer") setCompany("");
-            }}
-          >
-            <option value="applicant">Applicant</option>
-            <option value="employer">Employer</option>
-          </select>
-        </div>
-        {selectedRole === "employer" && (
-          <div>
-            <label className="text-sm font-medium text-zinc-800">Company</label>
-            <input
-              className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              required
-            />
-          </div>
-        )}
         <button
           disabled={loading}
           className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 disabled:opacity-50"

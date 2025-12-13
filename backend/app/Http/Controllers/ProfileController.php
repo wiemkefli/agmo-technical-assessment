@@ -19,11 +19,15 @@ class ProfileController extends Controller
         $data = $request->validated();
 
         if ($user->role === 'employer') {
-            $profile = $user->employerProfile()->firstOrCreate([
+            $profile = $user->employerProfile()->firstOrCreate([], [
                 'company' => $user->name,
             ]);
             $profile->fill($data);
             $profile->save();
+
+            if (array_key_exists('company', $data) && $user->name !== $data['company']) {
+                $user->forceFill(['name' => $data['company']])->save();
+            }
         } else {
             $profile = $user->applicantProfile()->firstOrCreate([]);
             $profile->fill($data);
