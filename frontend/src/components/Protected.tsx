@@ -13,7 +13,7 @@ export function Protected({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { token, role, loading, fetchMe } = useAuthStore();
+  const { token, role, loading, hydrated, fetchMe } = useAuthStore();
 
   useEffect(() => {
     if (token && !role) {
@@ -22,12 +22,13 @@ export function Protected({
   }, [token, role, fetchMe]);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!loading && !token) {
       router.replace("/login");
     }
-  }, [loading, token, router]);
+  }, [hydrated, loading, token, router]);
 
-  if (!token) return null;
+  if (!hydrated || !token) return null;
 
   if (roles && role && !roles.includes(role)) {
     return (

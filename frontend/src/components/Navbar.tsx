@@ -176,13 +176,6 @@ export function Navbar() {
                   </div>
                   <div className="h-px bg-zinc-100" />
                   <div className="py-1 text-sm">
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-3 py-2 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
-                    >
-                      Profile
-                    </Link>
                     {role === "applicant" && (
                       <>
                         <Link

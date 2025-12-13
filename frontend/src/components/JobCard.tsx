@@ -43,8 +43,8 @@ export function JobCard({
   return (
     <div
       className={[
-        "group flex w-full flex-col rounded-xl border border-zinc-200/70 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
-        isCompact ? "min-h-[8.5rem] p-4" : "min-h-[16rem] p-5",
+        "group flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/70 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+        isCompact ? "h-[8.5rem] p-4" : "h-[16rem] p-5",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3">

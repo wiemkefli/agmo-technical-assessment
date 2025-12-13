@@ -63,7 +63,7 @@ export default function EmployerJobsPage() {
                 <button
                   type="button"
                   onClick={() => setEditJobId(job.id)}
-                  className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
+                  className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
                 >
                   <JobCard job={job} />
                 </button>

@@ -13,20 +13,18 @@ class JobFactory extends Factory
     public function definition(): array
     {
         $status = fake()->randomElement(['draft', 'published']);
-        $withSalary = fake()->boolean(60);
-
-        $salaryMin = $withSalary ? fake()->numberBetween(2000, 12000) : null;
-        $salaryMax = $withSalary ? $salaryMin + fake()->numberBetween(500, 8000) : null;
+        $salaryMin = fake()->numberBetween(2000, 12000);
+        $salaryMax = $salaryMin + fake()->numberBetween(500, 8000);
 
         return [
             'employer_id' => User::factory()->employer(),
             'title' => fake()->jobTitle(),
             'description' => fake()->paragraphs(3, true),
-            'location' => fake()->optional()->city(),
+            'location' => fake()->city(),
             'salary_min' => $salaryMin,
             'salary_max' => $salaryMax,
-            'salary_currency' => $withSalary ? 'MYR' : null,
-            'salary_period' => $withSalary ? fake()->randomElement(['month', 'year']) : null,
+            'salary_currency' => fake()->randomElement(['MYR', 'USD', 'SGD']),
+            'salary_period' => fake()->randomElement(['month', 'year']),
             'is_remote' => fake()->boolean(30),
             'status' => $status,
             'published_at' => $status === 'published' ? now() : null,

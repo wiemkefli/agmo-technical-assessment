@@ -60,11 +60,11 @@ export interface PaginatedResponse<T> {
 export interface JobFormPayload {
   title: string;
   description: string;
-  location: string | null;
-  salary_min: number | null;
-  salary_max: number | null;
-  salary_currency: string | null;
-  salary_period: "month" | "year" | null;
+  location: string;
+  salary_min: number;
+  salary_max: number;
+  salary_currency: string;
+  salary_period: "month" | "year";
   is_remote: boolean;
   status: JobStatus;
 }

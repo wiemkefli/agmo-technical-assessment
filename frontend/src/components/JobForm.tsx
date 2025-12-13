@@ -57,31 +57,37 @@ export function JobForm({
     setSaving(true);
     setError(null);
     try {
-      const parsedMin =
-        salaryMin.trim() === "" ? null : Number.parseInt(salaryMin, 10);
-      const parsedMax =
-        salaryMax.trim() === "" ? null : Number.parseInt(salaryMax, 10);
+      if (location.trim() === "") {
+        throw new Error("Location is required");
+      }
+      if (salaryMin.trim() === "") {
+        throw new Error("Salary min is required");
+      }
+      if (salaryMax.trim() === "") {
+        throw new Error("Salary max is required");
+      }
 
-      if (parsedMin !== null && !Number.isFinite(parsedMin)) {
+      const parsedMin = Number.parseInt(salaryMin, 10);
+      const parsedMax = Number.parseInt(salaryMax, 10);
+
+      if (!Number.isFinite(parsedMin)) {
         throw new Error("Salary min must be a number");
       }
-      if (parsedMax !== null && !Number.isFinite(parsedMax)) {
+      if (!Number.isFinite(parsedMax)) {
         throw new Error("Salary max must be a number");
       }
-      if (parsedMin !== null && parsedMax !== null && parsedMax < parsedMin) {
+      if (parsedMax < parsedMin) {
         throw new Error("Salary max must be greater than salary min");
       }
-
-      const hasSalary = parsedMin !== null || parsedMax !== null;
 
       await onSubmit({
         title,
         description,
-        location: location || null,
+        location: location.trim(),
         salary_min: parsedMin,
         salary_max: parsedMax,
-        salary_currency: hasSalary ? salaryCurrency : null,
-        salary_period: hasSalary ? salaryPeriod : null,
+        salary_currency: salaryCurrency,
+        salary_period: salaryPeriod,
         is_remote: isRemote,
         status,
       });
@@ -130,6 +136,7 @@ export function JobForm({
             className={inputClass}
             value={location}
             onChange={(e) => setLocation(e.target.value)}
+            required
           />
         </div>
         <div>
@@ -139,15 +146,21 @@ export function JobForm({
               className={inputClass}
               inputMode="numeric"
               placeholder="Min"
+              type="number"
+              min={0}
               value={salaryMin}
               onChange={(e) => setSalaryMin(e.target.value)}
+              required
             />
             <input
               className={inputClass}
               inputMode="numeric"
               placeholder="Max"
+              type="number"
+              min={0}
               value={salaryMax}
               onChange={(e) => setSalaryMax(e.target.value)}
+              required
             />
           </div>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">

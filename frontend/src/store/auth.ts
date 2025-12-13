@@ -10,6 +10,7 @@ interface AuthState {
   token: string | null;
   role: Role | null;
   loading: boolean;
+  hydrated: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: {
@@ -22,6 +23,7 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
   clearError: () => void;
+  setHydrated: (hydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -31,9 +33,11 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       role: null,
       loading: false,
+      hydrated: false,
       error: null,
 
       clearError: () => set({ error: null }),
+      setHydrated: (hydrated) => set({ hydrated }),
 
       login: async (email, password) => {
         set({ loading: true, error: null });
@@ -102,6 +106,9 @@ export const useAuthStore = create<AuthState>()(
       name: "mini-job-board-auth",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token, user: state.user, role: state.role }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true);
+      },
     },
   ),
 );

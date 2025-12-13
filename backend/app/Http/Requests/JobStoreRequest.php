@@ -16,13 +16,13 @@ class JobStoreRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'min:3', 'max:255'],
             'description' => ['required', 'string'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'salary_min' => ['nullable', 'integer', 'min:0'],
-            'salary_max' => ['nullable', 'integer', 'min:0', 'gte:salary_min'],
-            'salary_currency' => ['nullable', 'string', 'size:3', 'required_with:salary_min,salary_max'],
-            'salary_period' => ['nullable', 'string', 'in:month,year', 'required_with:salary_min,salary_max'],
-            'is_remote' => ['sometimes', 'boolean'],
-            'status' => ['sometimes', 'string', 'in:draft,published'],
+            'location' => ['required', 'string', 'max:255'],
+            'salary_min' => ['required', 'integer', 'min:0'],
+            'salary_max' => ['required', 'integer', 'min:0', 'gte:salary_min'],
+            'salary_currency' => ['required', 'string', 'size:3'],
+            'salary_period' => ['required', 'string', 'in:month,year'],
+            'is_remote' => ['required', 'boolean'],
+            'status' => ['required', 'string', 'in:draft,published'],
         ];
     }
 }

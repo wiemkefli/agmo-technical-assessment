@@ -17,7 +17,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       const currentRole = useAuthStore.getState().role;
-      router.push(currentRole === "employer" ? "/dashboard" : "/jobs");
+      router.push(currentRole === "employer" ? "/employer/jobs" : "/jobs");
     } catch {
       // store error already set
     }
