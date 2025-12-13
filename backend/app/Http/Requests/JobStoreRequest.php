@@ -19,8 +19,6 @@ class JobStoreRequest extends FormRequest
             'location' => ['required', 'string', 'max:255'],
             'salary_min' => ['required', 'integer', 'min:0'],
             'salary_max' => ['required', 'integer', 'min:0', 'gte:salary_min'],
-            'salary_currency' => ['required', 'string', 'size:3'],
-            'salary_period' => ['required', 'string', 'in:month,year'],
             'is_remote' => ['required', 'boolean'],
             'status' => ['required', 'string', 'in:draft,published'],
         ];

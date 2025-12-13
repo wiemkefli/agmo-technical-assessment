@@ -41,8 +41,6 @@ class JobService
             'location',
             'salary_min',
             'salary_max',
-            'salary_currency',
-            'salary_period',
             'is_remote',
             'status',
         ]);

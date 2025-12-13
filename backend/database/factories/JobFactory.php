@@ -32,8 +32,6 @@ class JobFactory extends Factory
             'location' => $location,
             'salary_min' => $salaryMin,
             'salary_max' => $salaryMax,
-            'salary_currency' => fake()->randomElement(['MYR', 'USD', 'SGD']),
-            'salary_period' => fake()->randomElement(['month', 'year']),
             'is_remote' => fake()->boolean(30),
             'status' => $status,
             'published_at' => $status === 'published' ? now() : null,

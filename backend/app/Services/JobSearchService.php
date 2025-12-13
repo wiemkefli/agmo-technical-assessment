@@ -64,14 +64,6 @@ class JobSearchService
             });
         }
 
-        if (!empty($filters['salary_currency'])) {
-            $query->where('salary_currency', $filters['salary_currency']);
-        }
-
-        if (!empty($filters['salary_period'])) {
-            $query->where('salary_period', $filters['salary_period']);
-        }
-
         return $query;
     }
 
@@ -92,4 +84,3 @@ class JobSearchService
         return null;
     }
 }
-

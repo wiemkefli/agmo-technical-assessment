@@ -15,8 +15,6 @@ export function JobForm({
     location: string | null;
     salary_min: number | null;
     salary_max: number | null;
-    salary_currency: string | null;
-    salary_period: "month" | "year" | null;
     is_remote: boolean;
     status: JobStatus;
   };
@@ -39,12 +37,6 @@ export function JobForm({
     initial?.salary_max !== null && initial?.salary_max !== undefined
       ? String(initial.salary_max)
       : "",
-  );
-  const [salaryCurrency, setSalaryCurrency] = useState(
-    initial?.salary_currency ?? "MYR",
-  );
-  const [salaryPeriod, setSalaryPeriod] = useState<"month" | "year">(
-    initial?.salary_period ?? "month",
   );
 
   const [isRemote, setIsRemote] = useState(initial?.is_remote ?? false);
@@ -86,8 +78,6 @@ export function JobForm({
         location: location.trim(),
         salary_min: parsedMin,
         salary_max: parsedMax,
-        salary_currency: salaryCurrency,
-        salary_period: salaryPeriod,
         is_remote: isRemote,
         status,
       });
@@ -163,25 +153,7 @@ export function JobForm({
               required
             />
           </div>
-          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select
-              className={inputClass}
-              value={salaryCurrency}
-              onChange={(e) => setSalaryCurrency(e.target.value)}
-            >
-              <option value="MYR">MYR</option>
-              <option value="USD">USD</option>
-              <option value="SGD">SGD</option>
-            </select>
-            <select
-              className={inputClass}
-              value={salaryPeriod}
-              onChange={(e) => setSalaryPeriod(e.target.value as "month" | "year")}
-            >
-              <option value="month">Per month</option>
-              <option value="year">Per year</option>
-            </select>
-          </div>
+          <p className="mt-2 text-xs text-zinc-500">Shown as MYR / month.</p>
         </div>
       </div>
       <div className="flex items-center gap-2">

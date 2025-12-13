@@ -22,8 +22,6 @@ class RecommendationController extends Controller
             'is_remote' => ['nullable', 'boolean'],
             'salary_min' => ['nullable', 'integer', 'min:0'],
             'salary_max' => ['nullable', 'integer', 'min:0'],
-            'salary_currency' => ['nullable', 'string', 'size:3'],
-            'salary_period' => ['nullable', 'string', 'in:month,year'],
             'sort' => ['nullable', 'string', 'in:newest,oldest'],
         ]);
 

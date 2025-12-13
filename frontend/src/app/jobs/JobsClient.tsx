@@ -17,8 +17,6 @@ type JobFilters = {
   work_arrangement: WorkArrangement;
   salary_min: string;
   salary_max: string;
-  salary_currency: string;
-  salary_period: "" | "month" | "year";
   sort: Sort;
 };
 
@@ -30,18 +28,12 @@ function parseFiltersFromSearchParams(searchParams: { get: (key: string) => stri
   const sort = (searchParams.get("sort") as Sort) ?? "newest";
   const safeSort: Sort = sort === "oldest" ? "oldest" : "newest";
 
-  const salaryPeriod = searchParams.get("salary_period");
-  const safePeriod: "" | "month" | "year" =
-    salaryPeriod === "month" || salaryPeriod === "year" ? salaryPeriod : "";
-
   return {
     q: searchParams.get("q") ?? "",
     location: searchParams.get("location") ?? "",
     work_arrangement,
     salary_min: searchParams.get("salary_min") ?? "",
     salary_max: searchParams.get("salary_max") ?? "",
-    salary_currency: searchParams.get("salary_currency") ?? "",
-    salary_period: safePeriod,
     sort: safeSort,
   };
 }
@@ -135,8 +127,6 @@ export function JobsClient() {
 
     if (nextFilters.salary_min.trim()) params.set("salary_min", nextFilters.salary_min.trim());
     if (nextFilters.salary_max.trim()) params.set("salary_max", nextFilters.salary_max.trim());
-    if (nextFilters.salary_currency) params.set("salary_currency", nextFilters.salary_currency);
-    if (nextFilters.salary_period) params.set("salary_period", nextFilters.salary_period);
 
     if (nextFilters.sort) params.set("sort", nextFilters.sort);
 
@@ -270,8 +260,6 @@ const markApplied = (jobId: number) => {
       work_arrangement: "any",
       salary_min: "",
       salary_max: "",
-      salary_currency: "",
-      salary_period: "",
       sort: "newest",
     };
     setMoreOpen(false);
@@ -366,7 +354,7 @@ const markApplied = (jobId: number) => {
         </div>
 
         {moreOpen && (
-          <div className="mt-4 grid gap-3 rounded-xl bg-white/10 p-4 ring-1 ring-emerald-300/20 backdrop-blur sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-3 rounded-xl bg-white/10 p-4 ring-1 ring-emerald-300/20 backdrop-blur sm:grid-cols-2 lg:grid-cols-2">
             <div>
               <p className="text-xs font-semibold text-white/90">Salary min</p>
               <input
@@ -387,34 +375,7 @@ const markApplied = (jobId: number) => {
                 className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-400"
               />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-white/90">Currency</p>
-              <select
-                value={draft.salary_currency}
-                onChange={(e) => setDraft((p) => ({ ...p, salary_currency: e.target.value }))}
-                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-emerald-400"
-              >
-                <option value="">Any</option>
-                <option value="MYR">MYR</option>
-                <option value="USD">USD</option>
-                <option value="SGD">SGD</option>
-              </select>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-white/90">Period</p>
-              <select
-                value={draft.salary_period}
-                onChange={(e) =>
-                  setDraft((p) => ({ ...p, salary_period: e.target.value as JobFilters["salary_period"] }))
-                }
-                className="mt-1 h-10 w-full rounded-md bg-white px-3 text-sm text-zinc-900 shadow-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-emerald-400"
-              >
-                <option value="">Any</option>
-                <option value="month">Per month</option>
-                <option value="year">Per year</option>
-              </select>
-            </div>
-            <div className="sm:col-span-2 lg:col-span-4">
+            <div className="sm:col-span-2 lg:col-span-2">
               <p className="text-xs font-semibold text-white/90">Sort</p>
               <select
                 value={draft.sort}

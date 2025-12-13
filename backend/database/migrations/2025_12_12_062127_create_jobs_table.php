@@ -20,8 +20,6 @@ return new class extends Migration {
 
             $table->unsignedInteger('salary_min');
             $table->unsignedInteger('salary_max');
-            $table->string('salary_currency', 3);
-            $table->string('salary_period', 10); // month | year
             $table->boolean('is_remote')->default(false);
 
             // Keep as string for portability; validate values in code.

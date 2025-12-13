@@ -19,8 +19,6 @@ class JobUpdateRequest extends FormRequest
             'location' => ['sometimes', 'required', 'string', 'max:255'],
             'salary_min' => ['sometimes', 'required', 'integer', 'min:0'],
             'salary_max' => ['sometimes', 'required', 'integer', 'min:0', 'gte:salary_min'],
-            'salary_currency' => ['sometimes', 'required', 'string', 'size:3'],
-            'salary_period' => ['sometimes', 'required', 'string', 'in:month,year'],
             'is_remote' => ['sometimes', 'required', 'boolean'],
             'status' => ['sometimes', 'required', 'string', 'in:draft,published'],
         ];
