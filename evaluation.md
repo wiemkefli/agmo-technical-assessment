@@ -92,8 +92,6 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 
 ## 5. Nice-to-have improvements
 
-- Add a minimal frontend env example (`frontend/.env.example`) documenting `NEXT_PUBLIC_API_BASE_URL`
-- Tighten validation (e.g., trim/length constraints for application `message`)
 - Consider storing auth tokens in more secure mechanisms depending on threat model (localStorage is XSS-sensitive)
 
 ## 6. Final verdict
