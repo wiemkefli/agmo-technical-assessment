@@ -22,7 +22,13 @@ class AuthController extends Controller
             'role' => $data['role'],
         ]);
 
+        $user->profile()->create([
+            'company' => $data['company'] ?? null,
+        ]);
+
         $token = $user->createToken('auth')->plainTextToken;
+
+        $user->load('profile');
 
         return (new UserResource($user))
             ->additional(['token' => $token])
@@ -42,6 +48,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth')->plainTextToken;
 
+        $user->load('profile');
+
         return (new UserResource($user))
             ->additional(['token' => $token])
             ->response();
@@ -59,6 +67,6 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return new UserResource($request->user());
+        return new UserResource($request->user()->load('profile'));
     }
 }

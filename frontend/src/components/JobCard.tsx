@@ -40,31 +40,36 @@ export function JobCard({
     </p>
   );
 
+  const company = job.employer?.company ?? job.employer?.name ?? null;
+
   return (
     <div
       className={[
         "group flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/70 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
-        isCompact ? "h-[8.5rem] p-4" : "h-[16rem] p-5",
+        isCompact ? "h-[7.5rem] p-4" : "h-[14rem] p-5",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             <h3
               className={[
-                "min-h-[3rem] font-semibold leading-6 text-zinc-900 transition-colors group-hover:text-indigo-700 line-clamp-2",
+                "font-semibold leading-6 text-zinc-900 transition-colors group-hover:text-indigo-700 line-clamp-2",
                 isCompact ? "text-base" : "text-lg",
               ].join(" ")}
             >
               {job.title}
             </h3>
             {applied && (
-              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              <span className="mt-1 shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
                 Applied
               </span>
             )}
           </div>
-          <p className="mt-1 min-h-[1.25rem] text-sm leading-5 text-zinc-600">
+          <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600">
+            {company ?? "Unknown company"}
+          </p>
+          <p className="mt-0.5 min-h-[1.25rem] text-sm leading-5 text-zinc-600">
             {job.location ?? "Remote / Flexible"}
             {job.is_remote ? " - Remote" : ""}
           </p>

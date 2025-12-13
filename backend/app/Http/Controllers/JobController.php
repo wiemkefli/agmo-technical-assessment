@@ -31,7 +31,8 @@ class JobController extends Controller
         $perPage = max(1, min($perPage, 50));
 
         $query = Job::query()
-            ->where('status', 'published');
+            ->where('status', 'published')
+            ->with(['employer.profile']);
 
         $this->jobSearchService->applyFilters($query, $filters);
 
@@ -54,6 +55,6 @@ class JobController extends Controller
             abort(404);
         }
 
-        return new JobResource($job);
+        return new JobResource($job->load(['employer.profile']));
     }
 }

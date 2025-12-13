@@ -42,6 +42,8 @@ class RecommendationController extends Controller
         $keywords = $this->extractKeywords($user->savedJobs()->pluck('jobs.title')->all());
         $this->applyKeywordScoring($query, $keywords);
 
+        $query->with(['employer.profile']);
+
         $sort = $filters['sort'] ?? 'newest';
         if ($sort === 'oldest') {
             $query->orderBy('published_at')->orderBy('id');
@@ -106,4 +108,3 @@ class RecommendationController extends Controller
         $query->orderByDesc('relevance_score');
     }
 }
-

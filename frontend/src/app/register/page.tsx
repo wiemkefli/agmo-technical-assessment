@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const { register, loading, error, clearError } = useAuthStore();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [selectedRole, setSelectedRole] = useState<Role>("applicant");
@@ -25,6 +26,7 @@ export default function RegisterPage() {
         password,
         password_confirmation: passwordConfirmation,
         role: selectedRole,
+        company: selectedRole === "employer" ? company.trim() || undefined : undefined,
       });
       const currentRole = useAuthStore.getState().role;
       router.push(currentRole === "employer" ? "/employer/jobs" : "/jobs");
@@ -94,12 +96,27 @@ export default function RegisterPage() {
           <select
             className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value as Role)}
+            onChange={(e) => {
+              const nextRole = e.target.value as Role;
+              setSelectedRole(nextRole);
+              if (nextRole !== "employer") setCompany("");
+            }}
           >
             <option value="applicant">Applicant</option>
             <option value="employer">Employer</option>
           </select>
         </div>
+        {selectedRole === "employer" && (
+          <div>
+            <label className="text-sm font-medium text-zinc-800">Company</label>
+            <input
+              className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              required
+            />
+          </div>
+        )}
         <button
           disabled={loading}
           className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 disabled:opacity-50"

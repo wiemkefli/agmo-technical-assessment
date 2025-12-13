@@ -62,4 +62,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Job::class, 'saved_jobs')->withTimestamps();
     }
+
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class);
+    }
 }

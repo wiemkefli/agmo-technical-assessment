@@ -19,6 +19,7 @@ interface AuthState {
     password: string;
     password_confirmation: string;
     role: Role;
+    company?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
@@ -108,6 +109,9 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({ token: state.token, user: state.user, role: state.role }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
+        if (state?.token) {
+          state.fetchMe().catch(() => {});
+        }
       },
     },
   ),

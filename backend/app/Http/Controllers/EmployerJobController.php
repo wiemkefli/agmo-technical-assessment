@@ -40,7 +40,8 @@ class EmployerJobController extends Controller
         $perPage = max(1, min($perPage, 50));
 
         $query = Job::query()
-            ->where('employer_id', $user->id);
+            ->where('employer_id', $user->id)
+            ->with(['employer.profile']);
 
         $this->jobSearchService->applyFilters($query, $filters);
 
@@ -63,7 +64,7 @@ class EmployerJobController extends Controller
 
         $job = $this->jobService->create($request->user(), $request->validated());
 
-        return (new JobResource($job))
+        return (new JobResource($job->load(['employer.profile'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -72,7 +73,7 @@ class EmployerJobController extends Controller
     {
         $this->authorize('update', $job);
 
-        return new JobResource($job);
+        return new JobResource($job->load(['employer.profile']));
     }
 
     public function update(JobUpdateRequest $request, Job $job)
@@ -81,7 +82,7 @@ class EmployerJobController extends Controller
 
         $job = $this->jobService->update($job, $request->validated());
 
-        return new JobResource($job);
+        return new JobResource($job->load(['employer.profile']));
     }
 
     public function destroy(Job $job)
