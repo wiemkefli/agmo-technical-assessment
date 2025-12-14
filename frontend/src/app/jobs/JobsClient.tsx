@@ -42,6 +42,8 @@ export function JobsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, role } = useAuthStore();
+  const isApplicant = role === "applicant" && !!token;
+  const [hideAppliedJobs, setHideAppliedJobs] = useState(false);
 
   const toPositiveInt = (value: unknown, fallback: number) => {
     const n =
@@ -144,7 +146,7 @@ export function JobsClient() {
     });
 
     const endpoint =
-      token && role === "applicant" ? `recommended-jobs?${qs}` : `jobs?${qs}`;
+      `jobs?${qs}`;
 
     apiPaginated<Job>(endpoint, token ? { token } : undefined)
       .then((res) => alive && setData(res))
@@ -401,17 +403,45 @@ const markApplied = (jobId: number) => {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-zinc-900">Recommended</h2>
+                <h2 className="text-xl font-semibold text-zinc-900">Jobs</h2>
+                {isApplicant && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-zinc-700">
+                      Hide applied
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={hideAppliedJobs}
+                      onClick={() => setHideAppliedJobs((v) => !v)}
+                      className={[
+                        "relative inline-flex h-7 w-12 items-center rounded-full border transition",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30",
+                        hideAppliedJobs
+                          ? "border-indigo-500/40 bg-indigo-600"
+                          : "border-zinc-200 bg-zinc-100",
+                      ].join(" ")}
+                    >
+                      <span
+                        className={[
+                          "inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+                          hideAppliedJobs ? "translate-x-5" : "translate-x-0.5",
+                        ].join(" ")}
+                      />
+                      <span className="sr-only">Toggle hide applied jobs</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 {data.data
                   .filter((job) => {
-                    const isApplicant = role === "applicant" && !!token;
-                    return !(isApplicant && appliedJobIds.has(job.id));
+                    if (!isApplicant) return true;
+                    if (!hideAppliedJobs) return true;
+                    return !appliedJobIds.has(job.id);
                   })
                   .map((job) => {
-                  const isApplicant = role === "applicant" && !!token;
                   const applied = isApplicant && appliedJobIds.has(job.id);
                   const saved = isApplicant && savedJobIds.has(job.id);
 
