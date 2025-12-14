@@ -44,7 +44,7 @@ export function JobsClient() {
   const searchParams = useSearchParams();
   const { token, role } = useAuthStore();
   const isApplicant = role === "applicant" && !!token;
-  const [hideAppliedJobs, setHideAppliedJobs] = useState(false);
+  const [hideAppliedJobs, setHideAppliedJobs] = useState(true);
 
   const toPositiveInt = (value: unknown, fallback: number) => {
     const n =
