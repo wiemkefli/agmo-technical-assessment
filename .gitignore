@@ -3,6 +3,7 @@ node_modules
 # Local environment files
 backend/.env
 frontend/.env.local
+postman/runtime.postman_environment.json
 
 # App-specific dependency folders
 backend/vendor
