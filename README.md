@@ -80,7 +80,7 @@ This repository implements a mini job board where **employers** can create and m
 |   |-- JobBoard.postman_environment.json
 |   `-- POSTMAN_TEST_PLAN.md
 |-- Full Stack Engineer Technical Assessment.md
-`-- job_board_application.sql         # Optional SQL dump/reference
+`-- mini_job_board.sql                # Optional SQL schema (MySQL)
 ```
 
 ## 5) Quick Start
@@ -186,7 +186,6 @@ Notes:
 
 - CORS allows `http://localhost:3000` by default (`backend/config/cors.php`).
 - Resume files are stored on the `local` disk (`storage/app`) and served via authenticated download endpoints (no `storage:link` is required for the implemented download flow).
-- Optional Laravel dev convenience: `composer dev` in `backend/` runs `php artisan serve`, `queue:listen`, `pail`, and Vite concurrently (`backend/composer.json`, `backend/package.json`).
 
 ## 7) Frontend Setup
 
