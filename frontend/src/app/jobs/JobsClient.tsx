@@ -414,17 +414,17 @@ const markApplied = (jobId: number) => {
                       aria-checked={hideAppliedJobs}
                       onClick={() => setHideAppliedJobs((v) => !v)}
                       className={[
-                        "relative inline-flex h-8 w-14 items-center rounded-full border shadow-sm transition-colors",
+                        "relative inline-flex h-5 w-9 items-center rounded-full border shadow-sm transition-colors",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30",
                         hideAppliedJobs
                           ? "border-emerald-600/40 bg-emerald-600"
-                          : "border-rose-600/40 bg-rose-600",
+                          : "border-zinc-200 bg-zinc-100",
                       ].join(" ")}
                     >
                       <span
                         className={[
-                          "inline-flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm transition-transform",
-                          hideAppliedJobs ? "translate-x-6" : "translate-x-0.5",
+                          "inline-flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-sm transition-transform",
+                          hideAppliedJobs ? "translate-x-[1.05rem]" : "translate-x-0.5",
                         ].join(" ")}
                       >
                         {hideAppliedJobs ? (
@@ -433,7 +433,7 @@ const markApplied = (jobId: number) => {
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
-                            className="h-4 w-4 text-emerald-700"
+                            className="h-3 w-3 text-emerald-700"
                             aria-hidden="true"
                           >
                             <path d="M20 6 9 17l-5-5" />
@@ -444,7 +444,7 @@ const markApplied = (jobId: number) => {
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
-                            className="h-4 w-4 text-rose-700"
+                            className="h-3 w-3 text-zinc-500"
                             aria-hidden="true"
                           >
                             <path d="M18 6 6 18" />
