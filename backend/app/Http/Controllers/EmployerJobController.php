@@ -9,14 +9,12 @@ use App\Http\Resources\JobResource;
 use App\Http\Requests\JobStoreRequest;
 use App\Http\Requests\JobUpdateRequest;
 use App\Models\Job;
-use App\Services\JobQueryBuilder;
 use App\Services\JobService;
 
 class EmployerJobController extends Controller
 {
     public function __construct(
-        protected JobService $jobService,
-        protected JobQueryBuilder $jobQueryBuilder
+        protected JobService $jobService
     )
     {
     }
@@ -24,16 +22,12 @@ class EmployerJobController extends Controller
     public function index(EmployerJobIndexRequest $request)
     {
         $user = $request->user();
-        $filters = $request->jobFilters();
-
-        $query = Job::query()
-            ->where('employer_id', $user->id)
-            ->with(['employer.employerProfile']);
-
-        $this->jobQueryBuilder->applyFilters($query, $filters);
-        $this->jobQueryBuilder->applySort($query, $request->sort(), 'created_at');
-
-        $jobs = $this->jobQueryBuilder->paginate($query, $request->perPage());
+        $jobs = $this->jobService->searchEmployer(
+            $user,
+            $request->jobFilters(),
+            $request->sort(),
+            $request->perPage()
+        );
 
         return new JobCollection($jobs);
     }

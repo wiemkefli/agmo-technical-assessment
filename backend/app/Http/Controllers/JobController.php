@@ -6,26 +6,21 @@ use App\Http\Requests\JobIndexRequest;
 use App\Http\Resources\JobCollection;
 use App\Http\Resources\JobResource;
 use App\Models\Job;
-use App\Services\JobQueryBuilder;
+use App\Services\JobService;
 
 class JobController extends Controller
 {
-    public function __construct(protected JobQueryBuilder $jobQueryBuilder)
+    public function __construct(protected JobService $jobService)
     {
     }
 
     public function index(JobIndexRequest $request)
     {
-        $filters = $request->jobFilters();
-
-        $query = Job::query()
-            ->where('status', 'published')
-            ->with(['employer.employerProfile']);
-
-        $this->jobQueryBuilder->applyFilters($query, $filters);
-        $this->jobQueryBuilder->applySort($query, $request->sort(), 'published_at');
-
-        $jobs = $this->jobQueryBuilder->paginate($query, $request->perPage());
+        $jobs = $this->jobService->searchPublished(
+            $request->jobFilters(),
+            $request->sort(),
+            $request->perPage()
+        );
 
         return new JobCollection($jobs);
     }

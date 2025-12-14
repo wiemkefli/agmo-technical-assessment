@@ -2,6 +2,15 @@
 
 Scope scanned: full repo, with focus on `backend/` (Laravel 12 API) and `frontend/` (Next.js App Router + Zustand).
 
+## 0) Status (Implemented So Far)
+
+- **Opportunity A (Backend job query consolidation)**: Implemented via `JobIndexRequest`/`EmployerJobIndexRequest` + `JobQueryBuilder`; controllers updated to reuse it.
+- **Opportunity A (Backend job query consolidation)**: Implemented via `JobIndexRequest`/`EmployerJobIndexRequest`; job reads now live in `JobService` (controllers call `JobService::searchPublished/searchEmployer`).
+- **Opportunity B (Backend resume concerns + authorization)**: Implemented via `ResumeService` + `ApplicationPolicy`; controllers/services updated to use it.
+- **Opportunity C (Frontend API clients)**: Implemented via `frontend/src/lib/clients/*`; call sites migrated.
+- **Recommendations endpoint removed**: `/api/recommended-jobs` and `RecommendationController` removed (and corresponding feature test removed).
+- **Backend cleanup follow-ups**: `PerPageRequest` removes repeated `per_page` clamping; `SavedJobService` centralizes saved-job logic; `ParsesSalaryRange` removes `salary_range` parsing duplication.
+
 ## 1) Current Structure Summary
 
 ### Backend (`backend/`)
@@ -10,24 +19,25 @@ Scope scanned: full repo, with focus on `backend/` (Laravel 12 API) and `fronten
 
 - **Routing**: `backend/routes/api.php` defines all API endpoints and applies `auth:sanctum` + `role:*` middleware.
 - **Controllers (HTTP orchestration)**: `backend/app/Http/Controllers/*`
-  - Examples: `JobController`, `EmployerJobController`, `ApplicationController`, `ProfileController`, `AuthController`, `RecommendationController`, `SavedJobController`.
+  - Examples: `JobController`, `EmployerJobController`, `ApplicationController`, `ProfileController`, `AuthController`, `SavedJobController`.
 - **Validation (request DTOs)**: `backend/app/Http/Requests/*`
   - Strong use for write endpoints (jobs, applications, auth, profile).
-  - Query/filter validation is mostly done inline in controllers.
+  - Job list query/filter validation and pagination clamping live in `JobIndexRequest` / `EmployerJobIndexRequest`.
 - **Serialization/response shaping**: `backend/app/Http/Resources/*`
   - Examples: `JobResource` and `PublicEmployerResource` enforce public contract and hide employer email.
 - **Services (business logic)**: `backend/app/Services/*`
-  - `JobService` (create/update/delete), `JobSearchService` (filters), `ApplicationService` (apply + resume logic).
+  - `JobService` (create/update/delete + listing/search), `JobSearchService` (filter implementation used by `JobService`), `ApplicationService` (apply), `ResumeService` (resume storage ops).
 - **Domain models (Eloquent)**: `backend/app/Models/*` with relationships (jobs, applications, profiles, saved jobs pivot).
 - **Authorization**:
   - `backend/app/Policies/JobPolicy.php` for job ownership/role.
+  - `backend/app/Policies/ApplicationPolicy.php` for employer access to application status + resume download.
   - `backend/app/Http/Middleware/EnsureUserRole.php` for role-based route protection.
 - **Tests**: `backend/tests/Feature/*` cover key API behaviors and contracts.
 
 **Where responsibilities live today**
 
-- Controllers often do: query building + pagination + sorting + inline validation for query params, then delegate to services for some write operations.
-- Business logic is partly in services (`JobService`, `ApplicationService`) and partly in controllers (notably recommendation scoring and resume/profile workflows).
+- Controllers orchestrate HTTP concerns; job listing filters/sort/pagination are centralized in `JobQueryBuilder` + request objects.
+- Resume file operations are centralized in `ResumeService` and reused by profile/application flows.
 
 ### Frontend (`frontend/`)
 
@@ -39,44 +49,41 @@ Scope scanned: full repo, with focus on `backend/` (Laravel 12 API) and `fronten
   - Mix of reusable UI (e.g., `PaginationControls`) and feature-specific UI (e.g., `EmployerApplicationsModal`, `JobModal`).
 - **Client-side API wrapper**: `frontend/src/lib/api.ts`
   - `apiRequest`/`apiPaginated` (JSON-focused) + `APIError`.
+- **Domain API clients**: `frontend/src/lib/clients/*`
+  - Typed per-domain functions (auth/jobs/saved/applied/employer/profile) wrapping `apiRequest`.
 - **Types**: `frontend/src/lib/types.ts` defines frontend contract types.
 - **State management**: `frontend/src/store/auth.ts` (Zustand + persistence + token hydration).
 
 **Where responsibilities live today**
 
 - Many pages/components combine: UI + async fetching + pagination state + error handling + some domain rules (e.g., resume validation, query building).
-- API calls are stringly-typed (endpoint strings scattered across pages/components).
+- Endpoint strings are centralized in `frontend/src/lib/clients/*` instead of being scattered through UI code.
 
 ## 2) Modularity Issues & Code Smells
 
 ### Backend
 
-- **Repeated query param validation + pagination/sorting logic** across controllers:
-  - `JobController@index`, `EmployerJobController@index`, `RecommendationController@index` each re-define filter rules and sorting behavior.
-  - Per-page clamping logic is repeated in multiple controllers.
-- **Mixed concerns in controllers**:
-  - `RecommendationController` contains ranking/scoring algorithm and SQL expression construction (business logic living in HTTP layer).
-  - `ProfileController` handles resume storage concerns (file deletion, naming, persistence) alongside profile updates.
-  - `EmployerApplicationController` performs ad-hoc authorization checks rather than a dedicated `ApplicationPolicy` (or consistent policy usage).
-- **Service boundary inconsistency**:
-  - Jobs: create/update/delete is in `JobService`, but listing/search concerns are split between controllers + `JobSearchService`.
-  - Saved jobs: domain logic lives in controller (`SavedJobController`) rather than service/use-case abstraction (inconsistent with jobs/applications).
-- **Duplication in validation logic**:
-  - `JobStoreRequest` and `JobUpdateRequest` duplicate `salary_range` parsing and validation patterns.
+- **(Resolved) Repeated job list query logic**: moved to `JobIndexRequest`/`EmployerJobIndexRequest` + `JobQueryBuilder`.
+- **(Resolved) Resume storage duplication and ad-hoc employer checks**: moved to `ResumeService` + `ApplicationPolicy`.
+- **(Resolved) Repeated pagination clamping** outside job listings: moved to `PerPageRequest` (used by `SavedJobController@index` and `ApplicationController@index`).
+- **(Resolved) Service boundary inconsistency (jobs)**:
+  - Job create/update/delete and job listing/search are now unified behind `JobService`; controllers no longer depend on job query helpers directly.
+  - **(Resolved) Saved jobs boundary**: logic moved from `SavedJobController` into `SavedJobService`.
+- **(Resolved) Duplication in validation logic**: `JobStoreRequest` and `JobUpdateRequest` now share `salary_range` parsing via `ParsesSalaryRange`.
 - **Repository hygiene that impacts maintainability** (not a refactor, but affects modularity/velocity):
   - `backend/vendor/` and `backend/.env` appear committed; this typically increases repo noise and complicates collaboration/reviews.
 
 ### Frontend
 
-- **“Fat” client components**:
+- **"Fat" client components** (still true):
   - `frontend/src/app/jobs/JobsClient.tsx` is a major hotspot: URL <-> state syncing, query building, fetching jobs, applied/saved state, sidebar saved jobs, UI rendering, and modal control all in one file.
 - **Duplicate async patterns**:
   - Many pages repeat a similar fetch lifecycle: `loading/error/data`, `alive` flags, pagination state, and re-fetch logic.
 - **Duplicate domain logic**:
   - Resume file validation and blob download logic are repeated in multiple places (`ProfilePage`, `ApplicationForm`, `ApplicationDetailsDialog`).
   - Application status lists are duplicated (`ApplicantsTable` and `ApplicationDetailsDialog`).
-- **Tight coupling to API endpoints**:
-  - Endpoint strings (e.g., `"employer/jobs"`, `"saved-jobs/ids"`) are scattered; changing an endpoint requires hunting through UI code.
+- **(Improved) Tight coupling to API endpoints**:
+  - Most endpoint usage is now centralized in `frontend/src/lib/clients/*`, reducing “hunt and replace” refactors.
 - **Contract drift risk**:
   - Types are handwritten in `frontend/src/lib/types.ts` and may diverge from backend `JsonResource` outputs over time (especially for nested shapes like employer/applicant resources).
 - **Repository hygiene**:
@@ -84,17 +91,17 @@ Scope scanned: full repo, with focus on `backend/` (Laravel 12 API) and `fronten
 
 ## 3) Refactor Opportunities (High-Level Only)
 
-### Opportunity A — Backend: Consolidate “Job Query” concerns (filters/sort/pagination) into reusable request + query builder
+### Opportunity A - Backend: Consolidate "Job Query" concerns (filters/sort/pagination) into reusable request + query builder (Implemented)
 
-- **What**: Introduce a dedicated query/request object (e.g., `JobIndexRequest`) + a single “job query” builder that:
+- **What**: Introduce a dedicated query/request object (e.g., `JobIndexRequest`) + a single "job query" builder that:
   - Validates filters once, clamps pagination once, applies sorting once.
-  - Is reused by `JobController`, `EmployerJobController`, `RecommendationController`.
+  - Is reused by `JobController` and `EmployerJobController`.
 - **Pros**: Removes duplication; makes filters consistent; easier to add new filters; fewer bugs.
 - **Cons**: Slight upfront complexity; must preserve existing behavior precisely.
 - **Risk/Effort**: **Risk: Medium / Effort: Medium**
 - **What could break**: Filter semantics (`is_remote`, salary handling), default sort order, pagination meta, and tests that assert result ordering.
 
-### Opportunity B — Backend: Move resume storage concerns to a dedicated service (and align “resume download” authorization)
+### Opportunity B - Backend: Move resume storage concerns to a dedicated service (and align "resume download" authorization) (Implemented)
 
 - **What**: Centralize resume file operations (store/delete/copy/metadata) into a `ResumeService` used by:
   - `ProfileController` (profile resume upload/download/delete),
@@ -106,7 +113,7 @@ Scope scanned: full repo, with focus on `backend/` (Laravel 12 API) and `fronten
 - **Risk/Effort**: **Risk: Medium / Effort: Medium**
 - **What could break**: Resume download endpoints, stored file paths, profile resume reuse on application, and existing feature tests around resumes.
 
-### Opportunity C — Frontend: Introduce a small “API client” layer per domain (jobs/applications/profile/auth)
+### Opportunity C - Frontend: Introduce a small "API client" layer per domain (jobs/applications/profile/auth) (Implemented)
 
 - **What**: Replace scattered `apiRequest("string")` calls with typed functions:
   - `src/lib/clients/jobs.ts`, `applications.ts`, `profile.ts`, `auth.ts` (or `src/features/*/api.ts`).
@@ -139,7 +146,7 @@ Scope scanned: full repo, with focus on `backend/` (Laravel 12 API) and `fronten
 ## 4) Clarifying Questions (Before Any Refactor)
 
 1. **Preferred architecture direction**:
-   - Keep Laravel “classic” structure (Controllers + FormRequests + Services), or move toward a domain/feature module layout (e.g., `Domains/Jobs`, `Domains/Applications`)?
+   - Keep Laravel "classic" structure (Controllers + FormRequests + Services), or move toward a domain/feature module layout (e.g., `Domains/Jobs`, `Domains/Applications`)?
 2. **API contract guarantees**:
    - Are response shapes considered stable/public (especially nested employer/applicant payloads), or can we adjust them during refactor if tests still pass?
 3. **Frontend direction**:

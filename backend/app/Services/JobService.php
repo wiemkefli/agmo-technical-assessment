@@ -4,10 +4,16 @@ namespace App\Services;
 
 use App\Models\Job;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 
 class JobService
 {
+    public function __construct(protected JobSearchService $jobSearchService)
+    {
+    }
+
     public function create(User $employer, array $data): Job
     {
         $payload = $this->normalizePublishFields($data);
@@ -31,6 +37,46 @@ class JobService
     public function delete(Job $job): void
     {
         $job->delete();
+    }
+
+    public function searchPublished(array $filters, string $sort, int $perPage): LengthAwarePaginator
+    {
+        $query = Job::query()
+            ->where('status', 'published')
+            ->with(['employer.employerProfile']);
+
+        $this->jobSearchService->applyFilters($query, $filters);
+        $this->applySort($query, $sort, 'published_at');
+
+        return $query->paginate($perPage);
+    }
+
+    public function searchEmployer(User $employer, array $filters, string $sort, int $perPage): LengthAwarePaginator
+    {
+        $query = Job::query()
+            ->where('employer_id', $employer->id)
+            ->with(['employer.employerProfile']);
+
+        $this->jobSearchService->applyFilters($query, $filters);
+        $this->applySort($query, $sort, 'created_at');
+
+        return $query->paginate($perPage);
+    }
+
+    protected function applySort(
+        Builder $query,
+        string $sort,
+        string $timestampColumn,
+        string $tieBreakerColumn = 'id'
+    ): Builder
+    {
+        if ($sort === 'oldest') {
+            $query->orderBy($timestampColumn)->orderBy($tieBreakerColumn);
+        } else {
+            $query->orderByDesc($timestampColumn)->orderByDesc($tieBreakerColumn);
+        }
+
+        return $query;
     }
 
     protected function normalizePublishFields(array $data, ?Job $existing = null): array
