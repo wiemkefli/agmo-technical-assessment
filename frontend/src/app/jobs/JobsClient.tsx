@@ -28,8 +28,14 @@ export function JobsClient() {
     per_page: perPage,
     filters,
   });
+  const excludeAppliedFlag: 1 | undefined =
+    hideAppliedJobs && role === "applicant" && Boolean(token) ? 1 : undefined;
+  const effectiveListParams = {
+    ...listParams,
+    exclude_applied: excludeAppliedFlag,
+  };
 
-  const { data, loading, error } = useJobsListing({ listParams, token });
+  const { data, loading, error } = useJobsListing({ listParams: effectiveListParams, token });
 
   const {
     isApplicant,

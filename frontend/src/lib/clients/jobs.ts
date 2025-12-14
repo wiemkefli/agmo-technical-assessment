@@ -10,6 +10,7 @@ export type JobListParams = {
   is_remote?: 1 | 0;
   salary_min?: string | number;
   salary_max?: string | number;
+  exclude_applied?: 1 | 0;
   sort?: "newest" | "oldest";
 };
 

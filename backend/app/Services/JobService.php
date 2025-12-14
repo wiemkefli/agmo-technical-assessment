@@ -39,11 +39,17 @@ class JobService
         $job->delete();
     }
 
-    public function searchPublished(array $filters, string $sort, int $perPage): LengthAwarePaginator
+    public function searchPublished(array $filters, string $sort, int $perPage, ?User $actor = null, bool $excludeApplied = false): LengthAwarePaginator
     {
         $query = Job::query()
             ->where('status', 'published')
             ->with(['employer.employerProfile']);
+
+        if ($excludeApplied && $actor && $actor->role === 'applicant') {
+            $query->whereDoesntHave('applications', function (Builder $sub) use ($actor) {
+                $sub->where('applicant_id', $actor->id);
+            });
+        }
 
         $this->jobSearchService->applyFilters($query, $filters);
         $this->applySort($query, $sort, 'published_at');

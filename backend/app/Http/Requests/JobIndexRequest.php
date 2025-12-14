@@ -17,6 +17,7 @@ class JobIndexRequest extends PerPageRequest
             'is_remote' => ['nullable', 'boolean'],
             'salary_min' => ['nullable', 'integer', 'min:0'],
             'salary_max' => ['nullable', 'integer', 'min:0'],
+            'exclude_applied' => ['nullable', 'boolean'],
             'sort' => ['nullable', 'string', 'in:newest,oldest'],
         ];
     }
@@ -28,8 +29,14 @@ class JobIndexRequest extends PerPageRequest
     {
         $filters = $this->validated();
         unset($filters['sort']);
+        unset($filters['exclude_applied']);
 
         return $filters;
+    }
+
+    public function excludeApplied(): bool
+    {
+        return $this->boolean('exclude_applied');
     }
 
     public function sort(): string

@@ -16,10 +16,14 @@ class JobController extends Controller
 
     public function index(JobIndexRequest $request)
     {
+        $actor = auth('sanctum')->user();
+
         $jobs = $this->jobService->searchPublished(
             $request->jobFilters(),
             $request->sort(),
-            $request->perPage()
+            $request->perPage(),
+            $actor,
+            $request->excludeApplied()
         );
 
         return new JobCollection($jobs);
