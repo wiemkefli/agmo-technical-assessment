@@ -1,0 +1,415 @@
+{
+  "info": {
+    "_postman_id": "6d3d4b32-4a9a-4b1a-8e62-5f0e9f7c7b10",
+    "name": "Mini Job Board API (Laravel) - JobBoard",
+    "description": "Postman collection derived from backend/routes/api.php. Covers auth, employer jobs CRUD, applicant apply flow, and employer viewing applicants.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Employer (sets token_employer + token)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const current = pm.environment.get('employer_email');",
+                  "if (!current || current === 'employer@example.com') pm.environment.set('employer_email', 'employer+' + Date.now() + '@example.com');",
+                  "if (!pm.environment.get('employer_password')) pm.environment.set('employer_password', 'password');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                  "pm.test('Role employer', () => pm.expect(json.data.role).to.eql('employer'));",
+                  "pm.environment.set('token_employer', json.token);",
+                  "pm.environment.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Inc\",\n  \"email\": \"{{employer_email}}\",\n  \"password\": \"{{employer_password}}\",\n  \"password_confirmation\": \"{{employer_password}}\",\n  \"role\": \"employer\",\n  \"website\": \"https://acme.example\"\n}"
+            },
+            "url": "{{base_url}}{{api_prefix}}/auth/register"
+          }
+        },
+        {
+          "name": "Register Applicant (sets token_applicant + token)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const current = pm.environment.get('applicant_email');",
+                  "if (!current || current === 'applicant@example.com') pm.environment.set('applicant_email', 'applicant+' + Date.now() + '@example.com');",
+                  "if (!pm.environment.get('applicant_password')) pm.environment.set('applicant_password', 'password');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                  "pm.test('Role applicant', () => pm.expect(json.data.role).to.eql('applicant'));",
+                  "pm.environment.set('token_applicant', json.token);",
+                  "pm.environment.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Applicant\",\n  \"email\": \"{{applicant_email}}\",\n  \"password\": \"{{applicant_password}}\",\n  \"password_confirmation\": \"{{applicant_password}}\",\n  \"role\": \"applicant\"\n}"
+            },
+            "url": "{{base_url}}{{api_prefix}}/auth/register"
+          }
+        },
+        {
+          "name": "Login Employer (sets token_employer + token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                  "pm.test('Role employer', () => pm.expect(json.data.role).to.eql('employer'));",
+                  "pm.environment.set('token_employer', json.token);",
+                  "pm.environment.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{employer_email}}\",\n  \"password\": \"{{employer_password}}\"\n}"
+            },
+            "url": "{{base_url}}{{api_prefix}}/auth/login"
+          }
+        },
+        {
+          "name": "Login Applicant (sets token_applicant + token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                  "pm.test('Role applicant', () => pm.expect(json.data.role).to.eql('applicant'));",
+                  "pm.environment.set('token_applicant', json.token);",
+                  "pm.environment.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{applicant_email}}\",\n  \"password\": \"{{applicant_password}}\"\n}"
+            },
+            "url": "{{base_url}}{{api_prefix}}/auth/login"
+          }
+        },
+        {
+          "name": "Me (uses token)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jobs (Public)",
+      "item": [
+        {
+          "name": "List published jobs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/jobs?per_page=10"
+          }
+        },
+        {
+          "name": "Show published job (published_job_id)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/jobs/{{published_job_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Employer Jobs (requires employer role)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const t = pm.environment.get('token_employer');",
+              "if (t) pm.environment.set('token', t);"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "List my jobs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs?per_page=10"
+          }
+        },
+        {
+          "name": "Create job (draft) (sets job_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('job_id', json.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Backend Engineer\",\n  \"description\": \"Build APIs.\",\n  \"location\": \"Kuala Lumpur\",\n  \"salary_range\": \"3000-5000\",\n  \"is_remote\": true,\n  \"status\": \"draft\"\n}"
+            },
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs"
+          }
+        },
+        {
+          "name": "Create job (published) (sets published_job_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('published_job_id', json.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Frontend Engineer\",\n  \"description\": \"Build UI.\",\n  \"location\": \"Remote\",\n  \"salary_range\": \"4000-7000\",\n  \"is_remote\": true,\n  \"status\": \"published\"\n}"
+            },
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs"
+          }
+        },
+        {
+          "name": "Get job (job_id)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs/{{job_id}}"
+          }
+        },
+        {
+          "name": "Update job (job_id)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Backend Engineer\",\n  \"status\": \"published\"\n}"
+            },
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs/{{job_id}}"
+          }
+        },
+        {
+          "name": "Delete job (job_id)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs/{{job_id}}"
+          }
+        },
+        {
+          "name": "View applications for job (published_job_id)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs/{{published_job_id}}/applications"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Applicant Applications (requires applicant role)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const t = pm.environment.get('token_applicant');",
+              "if (t) pm.environment.set('token', t);"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "Apply to published job (sets application_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('application_id', json.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "message", "value": "Hello! Please consider my application.", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}{{api_prefix}}/jobs/{{published_job_id}}/apply"
+          }
+        },
+        {
+          "name": "List my applied jobs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/applied-jobs?per_page=10"
+          }
+        },
+        {
+          "name": "List applied job IDs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}{{api_prefix}}/applied-jobs/ids"
+          }
+        }
+      ]
+    }
+  ]
+}
+
