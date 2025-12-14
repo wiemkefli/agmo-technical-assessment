@@ -1,0 +1,435 @@
+{
+  "collection": {
+    "_": {
+      "postman_id": "dfd57959-9b5c-43c4-80f0-0a9c3ffa4bae"
+    },
+    "item": [
+      {
+        "id": "335d358a-0b16-4f19-9061-bb8e3a5273a0",
+        "name": "Cleanup",
+        "item": [
+          {
+            "id": "b0894652-ee2b-4257-93e0-8f3d5c7bd8be",
+            "name": "Delete Job (Draft) (job_id)",
+            "request": {
+              "url": {
+                "path": [
+                  "employer",
+                  "jobs",
+                  "{{job_id}}"
+                ],
+                "host": [
+                  "{{base_url}}{{api_prefix}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{token_employer}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "74ccb0e6-bfbc-4a71-9566-3c39c409a932",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                    "const json = pm.response.json();",
+                    "pm.test('Has message Deleted', () => pm.expect(json.message).to.eql('Deleted'));"
+                  ],
+                  "_lastExecutionId": "2eddcf25-673c-4f6a-9277-5914dbe20b57"
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      }
+    ],
+    "event": [],
+    "variable": [],
+    "info": {
+      "_postman_id": "dfd57959-9b5c-43c4-80f0-0a9c3ffa4bae",
+      "name": "Mini Job Board API - Cleanup",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    }
+  },
+  "environment": {
+    "_": {
+      "postman_variable_scope": "environment",
+      "postman_exported_at": "2025-12-14T11:11:23.196Z",
+      "postman_exported_using": "Newman/6.2.1"
+    },
+    "id": "c3e0fd86-65c8-4b0c-9f89-7e98c1de2b7b",
+    "name": "Mini Job Board (Local)",
+    "values": [
+      {
+        "type": "any",
+        "value": "http://localhost:8000",
+        "key": "base_url"
+      },
+      {
+        "type": "any",
+        "value": "/api",
+        "key": "api_prefix"
+      },
+      {
+        "type": "any",
+        "value": "employer+1765710646157@example.com",
+        "key": "employer_email"
+      },
+      {
+        "type": "any",
+        "value": "password",
+        "key": "employer_password"
+      },
+      {
+        "type": "any",
+        "value": "applicant+1765710646609@example.com",
+        "key": "applicant_email"
+      },
+      {
+        "type": "any",
+        "value": "password",
+        "key": "applicant_password"
+      },
+      {
+        "type": "any",
+        "value": "58|2T6L7eWYSzThvsLelsHbCHuYSNf6h4nL18X1Kh8Beda86f3c",
+        "key": "token_employer"
+      },
+      {
+        "type": "any",
+        "value": "59|WDgTA3vEghzfwWitQE32ACSkAk51P7pzV6lKtse192629e1f",
+        "key": "token_applicant"
+      },
+      {
+        "type": "any",
+        "value": 26,
+        "key": "job_id"
+      },
+      {
+        "type": "any",
+        "value": 27,
+        "key": "published_job_id"
+      },
+      {
+        "type": "any",
+        "value": 46,
+        "key": "application_id"
+      },
+      {
+        "type": "any",
+        "value": "Draft Job 1765710663591",
+        "key": "draft_job_title"
+      },
+      {
+        "type": "any",
+        "value": "Published Job 1765710663972",
+        "key": "published_job_title"
+      }
+    ]
+  },
+  "globals": {
+    "id": "73074f6f-42f7-46f7-9d41-2cb036f5688e",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "testScripts": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 0,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 98,
+      "responseMin": 98,
+      "responseMax": 98,
+      "responseSd": 0,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1765710692127,
+      "completed": 1765710692326
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 1,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "1975ad92-2357-40ef-ad77-cb032d5a6e5f",
+          "httpRequestId": "ccabcd77-ea29-4834-a52a-c5ab9df889ac"
+        },
+        "item": {
+          "id": "b0894652-ee2b-4257-93e0-8f3d5c7bd8be",
+          "name": "Delete Job (Draft) (job_id)",
+          "request": {
+            "url": {
+              "path": [
+                "employer",
+                "jobs",
+                "{{job_id}}"
+              ],
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{token_employer}}",
+                  "key": "token"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "74ccb0e6-bfbc-4a71-9566-3c39c409a932",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has message Deleted', () => pm.expect(json.message).to.eql('Deleted'));"
+                ],
+                "_lastExecutionId": "2eddcf25-673c-4f6a-9277-5914dbe20b57"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "8000",
+            "path": [
+              "api",
+              "employer",
+              "jobs",
+              "26"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer 58|2T6L7eWYSzThvsLelsHbCHuYSNf6h4nL18X1Kh8Beda86f3c",
+              "system": true
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "1b462ce8-a3b0-48b9-958f-4506083e8327",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8000",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "DELETE",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "type": "string",
+                "value": "58|2T6L7eWYSzThvsLelsHbCHuYSNf6h4nL18X1Kh8Beda86f3c",
+                "key": "token"
+              }
+            ]
+          }
+        },
+        "response": {
+          "id": "f2a3d54f-c346-4cfc-90fb-8934024a21ad",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Host",
+              "value": "localhost:8000"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "PHP/8.4.0"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, private"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 14 Dec 2025 11:11:32 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "http://localhost:3000"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              68,
+              101,
+              108,
+              101,
+              116,
+              101,
+              100,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 98,
+          "responseSize": 21
+        },
+        "id": "b0894652-ee2b-4257-93e0-8f3d5c7bd8be",
+        "assertions": [
+          {
+            "assertion": "Status 200",
+            "skipped": false
+          },
+          {
+            "assertion": "Has message Deleted",
+            "skipped": false
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 21
+    },
+    "failures": [],
+    "error": null
+  }
+}
