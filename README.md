@@ -2,6 +2,8 @@
 
 ## 1) Project Overview
 
+![Mini Job Board Screenshot](refs/Screenshot%20%28749%29.png)
+
 This repository implements a mini job board where **employers** can create and manage job listings and **applicants** can browse published jobs and apply. The backend is a **Laravel 12** JSON REST API secured with **Laravel Sanctum** personal access tokens and role-based authorization (employer vs applicant). The frontend is a **Next.js (App Router) + React** app that provides role-aware pages for employers and applicants, including job search, job posting, and application management.
 
 ## 2) Features
