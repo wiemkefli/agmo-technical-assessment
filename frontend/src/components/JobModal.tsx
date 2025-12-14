@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "./ApplicationForm";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 import { formatSalary } from "@/lib/salary";
+import { useAsyncEffect } from "@/lib/hooks/useAsyncEffect";
 
 export function JobModal({
   jobId,
@@ -27,20 +28,24 @@ export function JobModal({
 
   useLockBodyScroll(true);
 
-  useEffect(() => {
-    let alive = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    setError(null);
-    jobsClient
-      .show(jobId)
-      .then((res) => alive && setJob(res.data))
-      .catch((e: unknown) => alive && setError(getErrorMessage(e, "Not found")))
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [jobId]);
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await jobsClient.show(jobId, { signal });
+        if (!isActive()) return;
+        setJob(res.data);
+      } catch (e: unknown) {
+        if (!isActive()) return;
+        setError(getErrorMessage(e, "Not found"));
+      } finally {
+        if (!isActive()) return;
+        setLoading(false);
+      }
+    },
+    [jobId],
+  );
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

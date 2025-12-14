@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Protected } from "@/components/Protected";
 import * as employerJobsClient from "@/lib/clients/employerJobs";
 import type { Application } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicantsTable } from "@/components/ApplicantsTable";
+import { useAsyncEffect } from "@/lib/hooks/useAsyncEffect";
 
 export default function EmployerJobApplicationsPage() {
   const params = useParams<{ id: string }>();
@@ -15,19 +16,21 @@ export default function EmployerJobApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!token) return;
-    let alive = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    employerJobsClient
-      .applications(id, token)
-      .then((res) => alive && setApplications(res.data))
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [id, token]);
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const res = await employerJobsClient.applications(id, token, { signal });
+        if (!isActive()) return;
+        setApplications(res.data);
+      } finally {
+        if (!isActive()) return;
+        setLoading(false);
+      }
+    },
+    [id, token],
+  );
 
   return (
     <Protected roles={["employer"]}>

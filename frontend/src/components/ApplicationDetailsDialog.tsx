@@ -4,14 +4,8 @@ import type { Application } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 import { useAuthStore } from "@/store/auth";
-import { getErrorMessage } from "@/lib/api";
-
-const STATUSES: Array<{ value: string; label: string }> = [
-  { value: "submitted", label: "Submitted" },
-  { value: "reviewed", label: "Reviewed" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "rejected", label: "Rejected" },
-];
+import { APPLICATION_STATUSES } from "@/lib/applicationStatus";
+import { downloadBlob, fetchApiBlob, getApiBaseUrl, getBlobErrorMessage, openBlobInNewTab } from "@/lib/apiBlob";
 
 export function ApplicationDetailsDialog({
   open,
@@ -91,7 +85,7 @@ export function ApplicationDetailsDialog({
                   disabled={updating}
                   onChange={(e) => onUpdateStatus(application.id, e.target.value)}
                 >
-                  {STATUSES.map((s) => (
+                  {APPLICATION_STATUSES.map((s) => (
                     <option key={s.value} value={s.value}>
                       {s.label}
                     </option>
@@ -146,30 +140,11 @@ function ResumeSection({ application }: { application: Application }) {
 
   if (role !== "employer") return null;
 
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const apiBaseUrl = getApiBaseUrl();
   const hasResume = Boolean(application.has_resume);
 
   const canDownloadOrView =
     Boolean(token) && Boolean(apiBaseUrl) && hasResume && !downloading;
-
-  const fetchResumeBlob = async (): Promise<Blob> => {
-    if (!token || !apiBaseUrl) {
-      throw new Error("Missing auth token or API base URL");
-    }
-
-    const res = await fetch(
-      `${apiBaseUrl}/employer/applications/${application.id}/resume`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-
-    if (!res.ok) {
-      throw new Error(`Download failed (${res.status})`);
-    }
-
-    return res.blob();
-  };
 
   const download = async () => {
     if (!token || !apiBaseUrl) return;
@@ -177,20 +152,12 @@ function ResumeSection({ application }: { application: Application }) {
     setError(null);
 
     try {
-      const blob = await fetchResumeBlob();
-      const url = URL.createObjectURL(blob);
       const filename =
         application.resume_original_name ?? `resume-${application.id}`;
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const blob = await fetchApiBlob(`employer/applications/${application.id}/resume`, token);
+      downloadBlob(blob, filename);
     } catch (e: unknown) {
-      setError(getErrorMessage(e, "Failed to download resume"));
+      setError(getBlobErrorMessage(e, "Failed to download resume"));
     } finally {
       setDownloading(false);
     }
@@ -202,12 +169,10 @@ function ResumeSection({ application }: { application: Application }) {
     setError(null);
 
     try {
-      const blob = await fetchResumeBlob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      const blob = await fetchApiBlob(`employer/applications/${application.id}/resume`, token);
+      openBlobInNewTab(blob);
     } catch (e: unknown) {
-      setError(getErrorMessage(e, "Failed to view resume"));
+      setError(getBlobErrorMessage(e, "Failed to view resume"));
     } finally {
       setDownloading(false);
     }

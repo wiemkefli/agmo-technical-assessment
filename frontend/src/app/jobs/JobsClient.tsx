@@ -1,52 +1,24 @@
 ﻿"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getErrorMessage } from "@/lib/api";
-import * as jobsClient from "@/lib/clients/jobs";
-import * as appliedJobsClient from "@/lib/clients/appliedJobs";
-import * as savedJobsClient from "@/lib/clients/savedJobs";
-import type { Job, PaginatedResponse } from "@/lib/types";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
 import { PaginationControls } from "@/components/PaginationControls";
 import { useAuthStore } from "@/store/auth";
-
-type WorkArrangement = "any" | "remote" | "onsite";
-type Sort = "newest" | "oldest";
-
-type JobFilters = {
-  q: string;
-  location: string;
-  work_arrangement: WorkArrangement;
-  salary_min: string;
-  salary_max: string;
-  sort: Sort;
-};
-
-function parseFiltersFromSearchParams(searchParams: { get: (key: string) => string | null }): JobFilters {
-  const urlIsRemote = searchParams.get("is_remote");
-  const work_arrangement: WorkArrangement =
-    urlIsRemote === "1" ? "remote" : urlIsRemote === "0" ? "onsite" : "any";
-
-  const sort = (searchParams.get("sort") as Sort) ?? "newest";
-  const safeSort: Sort = sort === "oldest" ? "oldest" : "newest";
-
-  return {
-    q: searchParams.get("q") ?? "",
-    location: searchParams.get("location") ?? "",
-    work_arrangement,
-    salary_min: searchParams.get("salary_min") ?? "",
-    salary_max: searchParams.get("salary_max") ?? "",
-    sort: safeSort,
-  };
-}
+import type { JobFilters, Sort, WorkArrangement } from "@/features/jobs/filters";
+import {
+  buildJobsQueryString,
+  parseFiltersFromSearchParams,
+  toJobListParams,
+} from "@/features/jobs/filters";
+import { useApplicantJobState } from "@/features/jobs/useApplicantJobState";
+import { useJobsListing } from "@/features/jobs/useJobsListing";
 
 export function JobsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, role } = useAuthStore();
-  const isApplicant = role === "applicant" && !!token;
   const [hideAppliedJobs, setHideAppliedJobs] = useState(true);
 
   const toPositiveInt = (value: unknown, fallback: number) => {
@@ -69,18 +41,26 @@ export function JobsClient() {
   );
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const [data, setData] = useState<PaginatedResponse<Job> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const listParams = toJobListParams({
+    page: pageState,
+    per_page: perPageState,
+    filters,
+  });
+
+  const { data, loading, error } = useJobsListing({ listParams, token });
+
+  const {
+    isApplicant,
+    appliedJobIds,
+    applicationStatusByJobId,
+    savedJobIds,
+    savedJobs,
+    savingJobIds,
+    toggleSave,
+    markApplied,
+  } = useApplicantJobState({ token, role });
+
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const [appliedJobIds, setAppliedJobIds] = useState<Set<number>>(new Set());
-  const [applicationStatusByJobId, setApplicationStatusByJobId] = useState<Map<number, string>>(
-    () => new Map(),
-  );
-  const [savedJobIds, setSavedJobIds] = useState<Set<number>>(new Set());
-  const [savedJobs, setSavedJobs] = useState<Job[]>([]);
-  const savingJobIdsRef = useRef<Set<number>>(new Set());
-  const [savingJobIds, setSavingJobIds] = useState<Set<number>>(new Set());
 
   const currentPage = toPositiveInt(
     String(data?.meta.current_page ?? pageState),
@@ -97,6 +77,7 @@ export function JobsClient() {
     const nextFilters = parseFiltersFromSearchParams(searchParams);
 
     // Sync local state from URL only when URL changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPageState((prev) => (prev === nextPage ? prev : nextPage));
     setPerPageState((prev) => (prev === nextPerPage ? prev : nextPerPage));
     setFilters((prev) =>
@@ -107,186 +88,12 @@ export function JobsClient() {
     );
   }, [searchParams]);
 
-  const buildQuery = ({
-    page,
-    per_page,
-    nextFilters,
-  }: {
-    page: number;
-    per_page: number;
-    nextFilters: JobFilters;
-  }) => {
-    const params = new URLSearchParams();
-    params.set("page", String(page));
-    params.set("per_page", String(per_page));
-
-    const q = nextFilters.q.trim();
-    const location = nextFilters.location.trim();
-
-    if (q) params.set("q", q);
-    if (location) params.set("location", location);
-
-    if (nextFilters.work_arrangement === "remote") params.set("is_remote", "1");
-    if (nextFilters.work_arrangement === "onsite") params.set("is_remote", "0");
-
-    if (nextFilters.salary_min.trim()) params.set("salary_min", nextFilters.salary_min.trim());
-    if (nextFilters.salary_max.trim()) params.set("salary_max", nextFilters.salary_max.trim());
-
-    if (nextFilters.sort) params.set("sort", nextFilters.sort);
-
-    return params.toString();
-  };
-
-  const toJobListParams = ({
-    page,
-    per_page,
-    nextFilters,
-  }: {
-    page: number;
-    per_page: number;
-    nextFilters: JobFilters;
-  }): jobsClient.JobListParams => {
-    const q = nextFilters.q.trim();
-    const location = nextFilters.location.trim();
-
-    const is_remote =
-      nextFilters.work_arrangement === "remote"
-        ? 1
-        : nextFilters.work_arrangement === "onsite"
-          ? 0
-          : undefined;
-
-    return {
-      page,
-      per_page,
-      q: q || undefined,
-      location: location || undefined,
-      is_remote,
-      salary_min: nextFilters.salary_min.trim() || undefined,
-      salary_max: nextFilters.salary_max.trim() || undefined,
-      sort: nextFilters.sort,
-    };
-  };
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(null);
-    const params = toJobListParams({
-      page: pageState,
-      per_page: perPageState,
-      nextFilters: filters,
-    });
-
-    jobsClient
-      .list(params, token ? { token } : undefined)
-      .then((res) => alive && setData(res))
-      .catch((e: unknown) =>
-        alive && setError(getErrorMessage(e, "Failed to load jobs")),
-      )
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [pageState, perPageState, filters, token, role]);
-
-  useEffect(() => {
-    if (!token || role !== "applicant") return;
-    let alive = true;
-    appliedJobsClient
-      .ids(token)
-      .then((res) => {
-        if (!alive) return;
-        setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
-        setApplicationStatusByJobId(new Map(res.data.map((a) => [a.job_id, a.status])));
-      })
-      .catch(() => {
-        if (!alive) return;
-        setAppliedJobIds(new Set());
-        setApplicationStatusByJobId(new Map());
-      });
-    return () => {
-      alive = false;
-    };
-  }, [token, role]);
-
-  const reloadSavedJobs = () => {
-    if (!token || role !== "applicant") return;
-    savedJobsClient
-      .listPreview({ per_page: 5 }, token)
-      .then((res) => {
-        setSavedJobs(res.data);
-      })
-      .catch(() => {
-        setSavedJobs([]);
-      });
-  };
-
-  const reloadSavedJobIds = () => {
-    if (!token || role !== "applicant") return;
-    savedJobsClient
-      .ids(token)
-      .then((res) => setSavedJobIds(new Set(res.data)))
-      .catch(() => setSavedJobIds(new Set()));
-  };
-
-  useEffect(() => {
-    if (!token || role !== "applicant") return;
-    reloadSavedJobs();
-    reloadSavedJobIds();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, role]);
-
-const markApplied = (jobId: number) => {
-  setAppliedJobIds((prev) => {
-    const next = new Set(prev);
-    next.add(jobId);
-    return next;
-  });
-  setApplicationStatusByJobId((prev) => {
-    const next = new Map(prev);
-    next.set(jobId, next.get(jobId) ?? "submitted");
-    return next;
-  });
-};
-
-  const toggleSave = async (job: Job) => {
-    if (!token || role !== "applicant") return;
-    if (savingJobIdsRef.current.has(job.id)) return;
-
-    const isSaved = savedJobIds.has(job.id);
-    savingJobIdsRef.current.add(job.id);
-    setSavingJobIds(new Set(savingJobIdsRef.current));
-
-    try {
-      if (isSaved) {
-        await savedJobsClient.unsave(job.id, token);
-        setSavedJobIds((prev) => {
-          const next = new Set(prev);
-          next.delete(job.id);
-          return next;
-        });
-        setSavedJobs((prev) => prev.filter((j) => j.id !== job.id));
-      } else {
-        await savedJobsClient.save(job.id, token);
-        setSavedJobIds((prev) => new Set(prev).add(job.id));
-        setSavedJobs((prev) => [job, ...prev.filter((j) => j.id !== job.id)].slice(0, 5));
-      }
-
-      reloadSavedJobs();
-      reloadSavedJobIds();
-    } finally {
-      savingJobIdsRef.current.delete(job.id);
-      setSavingJobIds(new Set(savingJobIdsRef.current));
-    }
-  };
-
   const applyFilters = () => {
     setMoreOpen(false);
     setPageState(1);
     setFilters(draft);
     const safePerPage = toPositiveInt(String(perPageState), 10);
-    router.push(`/jobs?${buildQuery({ page: 1, per_page: safePerPage, nextFilters: draft })}`);
+    router.push(`/jobs?${buildJobsQueryString({ page: 1, per_page: safePerPage, filters: draft })}`);
   };
 
   const clearFilters = () => {
@@ -312,7 +119,7 @@ const markApplied = (jobId: number) => {
     const bounded = data ? Math.min(minPage, lastPage) : minPage;
     setPageState(bounded);
     const safePerPage = toPositiveInt(String(perPageState), 10);
-    router.push(`/jobs?${buildQuery({ page: bounded, per_page: safePerPage, nextFilters: filters })}`);
+    router.push(`/jobs?${buildJobsQueryString({ page: bounded, per_page: safePerPage, filters })}`);
   };
 
   return (

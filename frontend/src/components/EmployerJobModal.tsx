@@ -7,6 +7,7 @@ import type { Job, JobFormPayload } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { JobForm } from "@/components/JobForm";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
+import { useAsyncEffect } from "@/lib/hooks/useAsyncEffect";
 
 export function EmployerJobModal({
   mode,
@@ -28,27 +29,24 @@ export function EmployerJobModal({
 
   useLockBodyScroll(true);
 
-  useEffect(() => {
-    if (mode !== "edit" || !jobId || !token) return;
-    let alive = true;
-    employerJobsClient
-      .show(jobId, token)
-      .then((res) => {
-        if (!alive) return;
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      if (mode !== "edit" || !jobId || !token) return;
+      try {
+        const res = await employerJobsClient.show(jobId, token, { signal });
+        if (!isActive()) return;
         setJob(res.data);
         setLoadedJobId(jobId);
         setError(null);
-      })
-      .catch((e: unknown) => {
-        if (!alive) return;
+      } catch (e: unknown) {
+        if (!isActive()) return;
         setJob(null);
         setLoadedJobId(jobId);
         setError({ jobId, message: getErrorMessage(e, "Failed to load job") });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [mode, jobId, token]);
+      }
+    },
+    [mode, jobId, token],
+  );
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

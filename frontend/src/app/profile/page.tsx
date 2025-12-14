@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Protected } from "@/components/Protected";
 import { getErrorMessage } from "@/lib/api";
 import * as profileClient from "@/lib/clients/profile";
+import { downloadBlob, fetchApiBlob, getApiBaseUrl, openBlobInNewTab } from "@/lib/apiBlob";
+import { validatePdfResume } from "@/lib/resume";
 import { useAuthStore } from "@/store/auth";
 
 export default function ProfilePage() {
@@ -56,17 +58,7 @@ export default function ProfilePage() {
     }
   };
 
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const maxResumeBytes = 5 * 1024 * 1024;
-
-  const validateResume = (file: File): string | null => {
-    const name = file.name?.toLowerCase() ?? "";
-    const isPdfByName = name.endsWith(".pdf");
-    const isPdfByType = file.type === "application/pdf";
-    if (!isPdfByName && !isPdfByType) return "Resume must be a PDF file.";
-    if (file.size > maxResumeBytes) return "Resume file is too large (max 5MB).";
-    return null;
-  };
+  const apiBaseUrl = getApiBaseUrl();
 
   const uploadResume = async () => {
     if (!token || !user || user.role !== "applicant") return;
@@ -76,7 +68,7 @@ export default function ProfilePage() {
     setResumeError(null);
     setResumeMessage(null);
     try {
-      const validationError = validateResume(resumeFile);
+      const validationError = validatePdfResume(resumeFile);
       if (validationError) {
         setResumeError(validationError);
         return;
@@ -110,32 +102,15 @@ export default function ProfilePage() {
     }
   };
 
-  const fetchResumeBlob = async (): Promise<Blob> => {
-    if (!token || !apiBaseUrl) {
-      throw new Error("Missing auth token or API base URL");
-    }
-
-    const res = await fetch(`${apiBaseUrl}/profile/resume`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Fetch failed (${res.status})`);
-    }
-
-    return res.blob();
-  };
-
   const viewResume = async () => {
     if (!user?.resume?.exists) return;
     setResumeBusy(true);
     setResumeError(null);
     setResumeMessage(null);
     try {
-      const blob = await fetchResumeBlob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      if (!token) throw new Error("Missing auth token");
+      const blob = await fetchApiBlob("profile/resume", token);
+      openBlobInNewTab(blob);
     } catch (e: unknown) {
       setResumeError(getErrorMessage(e, "Failed to view resume"));
     } finally {
@@ -149,17 +124,10 @@ export default function ProfilePage() {
     setResumeError(null);
     setResumeMessage(null);
     try {
-      const blob = await fetchResumeBlob();
-      const url = URL.createObjectURL(blob);
+      if (!token) throw new Error("Missing auth token");
+      const blob = await fetchApiBlob("profile/resume", token);
       const filename = user?.resume?.original_name ?? "resume.pdf";
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, filename);
     } catch (e: unknown) {
       setResumeError(getErrorMessage(e, "Failed to download resume"));
     } finally {

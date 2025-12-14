@@ -13,13 +13,17 @@ export type JobListParams = {
   sort?: "newest" | "oldest";
 };
 
-export async function list(params: JobListParams, options?: { token?: string | null }) {
+export async function list(
+  params: JobListParams,
+  options?: { token?: string | null; signal?: AbortSignal },
+) {
   const qs = buildQuery(params);
-  return apiPaginated<Job>(`jobs${qs}`, options?.token ? { token: options.token } : undefined);
+  const token = options?.token ?? null;
+  return apiPaginated<Job>(`jobs${qs}`, token ? { token, signal: options?.signal } : { signal: options?.signal });
 }
 
-export async function show(jobId: number | string) {
-  return apiRequest<{ data: Job }>(`jobs/${String(jobId)}`);
+export async function show(jobId: number | string, options?: { signal?: AbortSignal }) {
+  return apiRequest<{ data: Job }>(`jobs/${String(jobId)}`, { signal: options?.signal });
 }
 
 export async function apply(
@@ -40,6 +44,6 @@ export async function apply(
   });
 }
 
-export async function appliedIds(token: string) {
-  return apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token });
+export async function appliedIds(token: string, options?: { signal?: AbortSignal }) {
+  return apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token, signal: options?.signal });
 }

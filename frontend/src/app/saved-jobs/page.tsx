@@ -1,78 +1,59 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Protected } from "@/components/Protected";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
 import { PaginationControls } from "@/components/PaginationControls";
-import { getErrorMessage } from "@/lib/api";
 import * as savedJobsClient from "@/lib/clients/savedJobs";
 import * as appliedJobsClient from "@/lib/clients/appliedJobs";
-import type { Job, PaginatedResponse } from "@/lib/types";
+import type { Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
+import { usePaginatedResource } from "@/lib/hooks/usePaginatedResource";
+import { useAsyncEffect } from "@/lib/hooks/useAsyncEffect";
 
 export default function SavedJobsPage() {
   const { token } = useAuthStore();
 
-  const [data, setData] = useState<PaginatedResponse<Job> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<number>>(new Set());
   const [applicationStatusByJobId, setApplicationStatusByJobId] = useState<Map<number, string>>(
     () => new Map(),
   );
-
-  const [page, setPage] = useState(1);
   const perPage = 10;
 
-  const currentPage = data?.meta.current_page ?? page;
-  const lastPage = data?.meta.last_page ?? currentPage;
+  const fetcher = useCallback(
+    (params: { page: number; per_page: number }, ctx: { signal: AbortSignal }) => {
+      if (!token) throw new Error("Not authenticated");
+      return savedJobsClient.list(params, token, { signal: ctx.signal });
+    },
+    [token],
+  );
 
-  const reloadSavedJobs = useCallback(() => {
-    if (!token) return;
-    let alive = true;
-    setLoading(true);
-    setError(null);
+  const { data, loading, error, setPage, mutate, currentPage, lastPage, total } =
+    usePaginatedResource<Job>({
+      enabled: Boolean(token),
+      fetcher,
+      perPage,
+      deps: [perPage],
+    });
 
-    savedJobsClient
-      .list({ page, per_page: perPage }, token)
-      .then((res) => alive && setData(res))
-      .catch((e: unknown) =>
-        alive && setError(getErrorMessage(e, "Failed to load saved jobs")),
-      )
-      .finally(() => alive && setLoading(false));
-
-    return () => {
-      alive = false;
-    };
-  }, [page, token]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    const cleanup = reloadSavedJobs();
-    return cleanup;
-  }, [reloadSavedJobs]);
-
-  useEffect(() => {
-    if (!token) return;
-    let alive = true;
-    appliedJobsClient
-      .ids(token)
-      .then((res) => {
-        if (!alive) return;
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      if (!token) return;
+      try {
+        const res = await appliedJobsClient.ids(token, { signal });
+        if (!isActive()) return;
         setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
         setApplicationStatusByJobId(new Map(res.data.map((a) => [a.job_id, a.status])));
-      })
-      .catch(() => {
-        if (!alive) return;
+      } catch {
+        if (!isActive()) return;
         setAppliedJobIds(new Set());
         setApplicationStatusByJobId(new Map());
-      });
-    return () => {
-      alive = false;
-    };
-  }, [token]);
+      }
+    },
+    [token],
+  );
 
   const markApplied = (jobId: number) => {
     setAppliedJobIds((prev) => {
@@ -90,7 +71,7 @@ export default function SavedJobsPage() {
   const unsave = async (jobId: number) => {
     if (!token) return;
     await savedJobsClient.unsave(jobId, token);
-    setData((prev) => {
+    mutate((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
@@ -108,7 +89,7 @@ export default function SavedJobsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Saved Jobs</h1>
             {data && (
               <p className="mt-1 text-sm text-zinc-600">
-                {data.meta.total} saved job{data.meta.total === 1 ? "" : "s"}
+                {total} saved job{total === 1 ? "" : "s"}
               </p>
             )}
           </div>

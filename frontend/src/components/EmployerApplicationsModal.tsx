@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth";
 import { ApplicantsTable } from "@/components/ApplicantsTable";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 import { ApplicationDetailsDialog } from "@/components/ApplicationDetailsDialog";
+import { useAsyncEffect } from "@/lib/hooks/useAsyncEffect";
 
 export function EmployerApplicationsModal({
   jobId,
@@ -29,23 +30,26 @@ export function EmployerApplicationsModal({
 
   useLockBodyScroll(true);
 
-  useEffect(() => {
-    if (!token) return;
-    let alive = true;
-    setLoading(true);
-    setLoadError(null);
-    setActionError(null);
-    employerJobsClient
-      .applications(jobId, token)
-      .then((res) => alive && setApplications(res.data))
-      .catch((e: unknown) =>
-        alive && setLoadError(getErrorMessage(e, "Failed to load applications")),
-      )
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [jobId, token]);
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      if (!token) return;
+      setLoading(true);
+      setLoadError(null);
+      setActionError(null);
+      try {
+        const res = await employerJobsClient.applications(jobId, token, { signal });
+        if (!isActive()) return;
+        setApplications(res.data);
+      } catch (e: unknown) {
+        if (!isActive()) return;
+        setLoadError(getErrorMessage(e, "Failed to load applications"));
+      } finally {
+        if (!isActive()) return;
+        setLoading(false);
+      }
+    },
+    [jobId, token],
+  );
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

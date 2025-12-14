@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { validatePdfResume } from "@/lib/resume";
 
 export function ApplicationForm({
   onSubmit,
@@ -13,7 +14,6 @@ export function ApplicationForm({
   }) => Promise<void>;
   savedResume?: { exists: boolean; original_name: string | null } | null;
 }) {
-  const maxResumeBytes = 5 * 1024 * 1024;
   const inputClass =
     "mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
   const [message, setMessage] = useState("");
@@ -48,17 +48,8 @@ export function ApplicationForm({
       }
 
       if (resumeOption === "upload" && resume) {
-        const name = resume.name?.toLowerCase() ?? "";
-        const isPdfByName = name.endsWith(".pdf");
-        const isPdfByType = resume.type === "application/pdf";
-
-        if (!isPdfByName && !isPdfByType) {
-          throw new Error("Resume must be a PDF file.");
-        }
-
-        if (resume.size > maxResumeBytes) {
-          throw new Error("Resume file is too large (max 5MB).");
-        }
+        const validationError = validatePdfResume(resume);
+        if (validationError) throw new Error(validationError);
       }
 
       await onSubmit({

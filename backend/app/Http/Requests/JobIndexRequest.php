@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class JobIndexRequest extends FormRequest
+class JobIndexRequest extends PerPageRequest
 {
     public function authorize(): bool
     {
@@ -41,12 +39,4 @@ class JobIndexRequest extends FormRequest
 
         return $sort === 'oldest' ? 'oldest' : 'newest';
     }
-
-    public function perPage(int $default = 10, int $max = 50): int
-    {
-        $perPage = (int) $this->query('per_page', $default);
-
-        return max(1, min($perPage, $max));
-    }
 }
-

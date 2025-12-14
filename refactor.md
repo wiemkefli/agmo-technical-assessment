@@ -1,161 +1,120 @@
-# Refactor Assessment (Report Only)
+# Refactor Assessment (Current State)
 
-Scope scanned: full repo, with focus on `backend/` (Laravel 12 API) and `frontend/` (Next.js App Router + Zustand).
-
-## 0) Status (Implemented So Far)
-
-- **Opportunity A (Backend job query consolidation)**: Implemented via `JobIndexRequest`/`EmployerJobIndexRequest` + `JobQueryBuilder`; controllers updated to reuse it.
-- **Opportunity A (Backend job query consolidation)**: Implemented via `JobIndexRequest`/`EmployerJobIndexRequest`; job reads now live in `JobService` (controllers call `JobService::searchPublished/searchEmployer`).
-- **Opportunity B (Backend resume concerns + authorization)**: Implemented via `ResumeService` + `ApplicationPolicy`; controllers/services updated to use it.
-- **Opportunity C (Frontend API clients)**: Implemented via `frontend/src/lib/clients/*`; call sites migrated.
-- **Recommendations endpoint removed**: `/api/recommended-jobs` and `RecommendationController` removed (and corresponding feature test removed).
-- **Backend cleanup follow-ups**: `PerPageRequest` removes repeated `per_page` clamping; `SavedJobService` centralizes saved-job logic; `ParsesSalaryRange` removes `salary_range` parsing duplication.
+Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Next.js App Router + Zustand). This document summarizes the current structure, remaining modularity smells, and practical next refactor directions.
 
 ## 1) Current Structure Summary
 
 ### Backend (`backend/`)
 
-**Primary layers/modules (as implemented)**
+**Where responsibilities live**
 
-- **Routing**: `backend/routes/api.php` defines all API endpoints and applies `auth:sanctum` + `role:*` middleware.
+- **Routing**: `backend/routes/api.php` (public vs applicant vs employer groups; `auth:sanctum` + `role:*` middleware)
 - **Controllers (HTTP orchestration)**: `backend/app/Http/Controllers/*`
-  - Examples: `JobController`, `EmployerJobController`, `ApplicationController`, `ProfileController`, `AuthController`, `SavedJobController`.
-- **Validation (request DTOs)**: `backend/app/Http/Requests/*`
-  - Strong use for write endpoints (jobs, applications, auth, profile).
-  - Job list query/filter validation and pagination clamping live in `JobIndexRequest` / `EmployerJobIndexRequest`.
-- **Serialization/response shaping**: `backend/app/Http/Resources/*`
-  - Examples: `JobResource` and `PublicEmployerResource` enforce public contract and hide employer email.
-- **Services (business logic)**: `backend/app/Services/*`
-  - `JobService` (create/update/delete + listing/search), `JobSearchService` (filter implementation used by `JobService`), `ApplicationService` (apply), `ResumeService` (resume storage ops).
-- **Domain models (Eloquent)**: `backend/app/Models/*` with relationships (jobs, applications, profiles, saved jobs pivot).
-- **Authorization**:
-  - `backend/app/Policies/JobPolicy.php` for job ownership/role.
-  - `backend/app/Policies/ApplicationPolicy.php` for employer access to application status + resume download.
-  - `backend/app/Http/Middleware/EnsureUserRole.php` for role-based route protection.
-- **Tests**: `backend/tests/Feature/*` cover key API behaviors and contracts.
+  - `JobController`: public job listing + job details; uses `JobIndexRequest` and delegates listing/search to `JobService`
+  - `EmployerJobController`: employer job listing + CRUD + job applications listing; uses `EmployerJobIndexRequest` and `JobService`
+  - `ApplicationController`: applicant apply + applied jobs listing/ids; uses `ApplicationService` and `PerPageRequest` for pagination normalization
+  - `SavedJobController`: saved jobs list/ids + save/unsave; delegates to `SavedJobService` and uses `PerPageRequest`
+  - `ProfileController`: profile show/update + resume upload/download/delete; delegates file operations to `ResumeService`
+  - `EmployerApplicationController`: employer application updates + resume download; authorization via `ApplicationPolicy`, file operations via `ResumeService`
+- **Requests (validation + normalization)**: `backend/app/Http/Requests/*`
+  - Query/list: `PerPageRequest`, `JobIndexRequest`, `EmployerJobIndexRequest`
+  - Write: `JobStoreRequest`, `JobUpdateRequest`, `ApplicationStoreRequest`, `ProfileUpdateRequest`, etc.
+  - Shared request logic: `backend/app/Http/Requests/Concerns/ParsesSalaryRange.php`
+- **Services (domain/use-case orchestration)**: `backend/app/Services/*`
+  - Jobs: `JobService` (CRUD + listing/search) delegating filter mechanics to `JobSearchService`
+  - Applications: `ApplicationService` + resume file operations in `ResumeService`
+  - Saved jobs: `SavedJobService`
+- **Resources (response shaping / API contract)**: `backend/app/Http/Resources/*` (`JobResource`, `JobCollection`, `ApplicationResource`, `ApplicationCollection`, `UserResource`, `PublicEmployerResource`)
+- **Authorization**: policies in `backend/app/Policies/*` (notably `ApplicationPolicy` + `JobPolicy`), mapped in `backend/app/Providers/AuthServiceProvider.php`
+- **Tests**: `backend/tests/Feature/*`
 
-**Where responsibilities live today**
+**Notable implemented refactors already in place**
 
-- Controllers orchestrate HTTP concerns; job listing filters/sort/pagination are centralized in `JobQueryBuilder` + request objects.
-- Resume file operations are centralized in `ResumeService` and reused by profile/application flows.
+- `per_page` clamping centralized in `backend/app/Http/Requests/PerPageRequest.php` (used by job listings + applied jobs + saved jobs).
+- Job listing/search concerns consolidated into `JobIndexRequest`/`EmployerJobIndexRequest` + `JobService` (internally using `JobSearchService`).
+- Resume Storage logic centralized in `ResumeService` and employer-side authorization aligned via `ApplicationPolicy`.
+- Recommendations feature removed (no `RecommendationController`, no `/api/recommended-jobs`, no backend recommendations test).
 
 ### Frontend (`frontend/`)
 
-**Primary layers/modules (as implemented)**
+**Where responsibilities live**
 
-- **Routes/pages (App Router)**: `frontend/src/app/**/page.tsx`
-  - Feature-style routing folders: `jobs`, `saved-jobs`, `applied-jobs`, `profile`, `employer/jobs/*`, etc.
-- **UI components**: `frontend/src/components/*`
-  - Mix of reusable UI (e.g., `PaginationControls`) and feature-specific UI (e.g., `EmployerApplicationsModal`, `JobModal`).
-- **Client-side API wrapper**: `frontend/src/lib/api.ts`
-  - `apiRequest`/`apiPaginated` (JSON-focused) + `APIError`.
-- **Domain API clients**: `frontend/src/lib/clients/*`
-  - Typed per-domain functions (auth/jobs/saved/applied/employer/profile) wrapping `apiRequest`.
-- **Types**: `frontend/src/lib/types.ts` defines frontend contract types.
-- **State management**: `frontend/src/store/auth.ts` (Zustand + persistence + token hydration).
+- **Routes/pages**: `frontend/src/app/*` (App Router)
+  - Jobs: `frontend/src/app/jobs/JobsClient.tsx`, `frontend/src/app/jobs/[id]/page.tsx`
+  - Applicant: `frontend/src/app/applied-jobs/page.tsx`, `frontend/src/app/saved-jobs/page.tsx`, `frontend/src/app/profile/page.tsx`
+  - Employer: `frontend/src/app/employer/jobs/page.tsx`, `frontend/src/app/employer/jobs/[id]/edit/page.tsx`, `frontend/src/app/employer/jobs/[id]/applications/page.tsx`
+- **Components**: `frontend/src/components/*` (cards, modals, forms, tables)
+- **Client state**: `frontend/src/store/auth.ts` (Zustand)
+- **API layer**
+  - Low-level wrapper: `frontend/src/lib/api.ts`
+  - Domain clients: `frontend/src/lib/clients/*` (`auth.ts`, `jobs.ts`, `appliedJobs.ts`, `savedJobs.ts`, `profile.ts`, `employerJobs.ts`, `employerApplications.ts`)
+  - Shared query helpers: `frontend/src/lib/clients/query.ts`
+- **Hooks**
+  - Non-paginated async: `frontend/src/lib/hooks/useAsyncEffect.ts`
+  - Paginated resources: `frontend/src/lib/hooks/usePaginatedResource.ts`
+- **Feature modules**
+  - Jobs: `frontend/src/features/jobs/*` (`filters.ts`, `useJobsListing.ts`, `useApplicantJobState.ts`, `useJobsUrlState.ts`)
+- **Shared utilities**
+  - Resume validation: `frontend/src/lib/resume.ts`
+  - Authenticated blob download/view: `frontend/src/lib/apiBlob.ts`
+  - Application statuses: `frontend/src/lib/applicationStatus.ts`
 
-**Where responsibilities live today**
+**Notable implemented refactors already in place**
 
-- Many pages/components combine: UI + async fetching + pagination state + error handling + some domain rules (e.g., resume validation, query building).
-- Endpoint strings are centralized in `frontend/src/lib/clients/*` instead of being scattered through UI code.
+- API endpoint usage is mostly centralized in `frontend/src/lib/clients/*` instead of being scattered across components.
+- Fetch lifecycles are more consistent via `useAsyncEffect` and `usePaginatedResource` (used in multiple screens).
+- Jobs listing defaults to “Hide applied jobs” enabled.
 
-## 2) Modularity Issues & Code Smells
+## 2) Modularity Issues & Code Smells (Remaining)
 
 ### Backend
 
-- **(Resolved) Repeated job list query logic**: moved to `JobIndexRequest`/`EmployerJobIndexRequest` + `JobQueryBuilder`.
-- **(Resolved) Resume storage duplication and ad-hoc employer checks**: moved to `ResumeService` + `ApplicationPolicy`.
-- **(Resolved) Repeated pagination clamping** outside job listings: moved to `PerPageRequest` (used by `SavedJobController@index` and `ApplicationController@index`).
-- **(Resolved) Service boundary inconsistency (jobs)**:
-  - Job create/update/delete and job listing/search are now unified behind `JobService`; controllers no longer depend on job query helpers directly.
-  - **(Resolved) Saved jobs boundary**: logic moved from `SavedJobController` into `SavedJobService`.
-- **(Resolved) Duplication in validation logic**: `JobStoreRequest` and `JobUpdateRequest` now share `salary_range` parsing via `ParsesSalaryRange`.
-- **Repository hygiene that impacts maintainability** (not a refactor, but affects modularity/velocity):
-  - `backend/vendor/` and `backend/.env` appear committed; this typically increases repo noise and complicates collaboration/reviews.
+- **Feature boundary is still mostly “layered” (controllers/requests/services/resources)**
+  - This is idiomatic Laravel and fine for current size, but if domains expand, “feature folders” (Jobs/Applications/Profile/Auth) would make boundaries more explicit.
+- **Pagination utilities are centralized, but not enforced**
+  - `PerPageRequest` exists and is used in multiple controllers; as more paginated endpoints are added, standardizing on it (or a similar request abstraction) early keeps controller methods consistent.
 
 ### Frontend
 
-- **"Fat" client components** (still true):
-  - `frontend/src/app/jobs/JobsClient.tsx` is a major hotspot: URL <-> state syncing, query building, fetching jobs, applied/saved state, sidebar saved jobs, UI rendering, and modal control all in one file.
-- **Duplicate async patterns**:
-  - Many pages repeat a similar fetch lifecycle: `loading/error/data`, `alive` flags, pagination state, and re-fetch logic.
-- **Duplicate domain logic**:
-  - Resume file validation and blob download logic are repeated in multiple places (`ProfilePage`, `ApplicationForm`, `ApplicationDetailsDialog`).
-  - Application status lists are duplicated (`ApplicantsTable` and `ApplicationDetailsDialog`).
-- **(Improved) Tight coupling to API endpoints**:
-  - Most endpoint usage is now centralized in `frontend/src/lib/clients/*`, reducing “hunt and replace” refactors.
-- **Contract drift risk**:
-  - Types are handwritten in `frontend/src/lib/types.ts` and may diverge from backend `JsonResource` outputs over time (especially for nested shapes like employer/applicant resources).
-- **Repository hygiene**:
-  - `frontend/node_modules/` and `frontend/.next/` appear present in repo; this materially hurts maintainability (diff noise, huge checkout size, slower CI).
+- **“Fat” jobs listing client component**
+  - `frontend/src/app/jobs/JobsClient.tsx` still owns a lot at once: URL <-> state sync, filter draft state, modal state, list rendering, pagination wiring, and interactions (save/apply state).
+- **Jobs URL → state sync still uses a set-state-in-effect pattern**
+  - `frontend/src/app/jobs/JobsClient.tsx` syncs URL params into React state in an effect and disables `react-hooks/set-state-in-effect`.
+  - A URL-state helper exists (`frontend/src/features/jobs/useJobsUrlState.ts`), but is not yet the single source of truth for the listing’s `page/per_page/filters`.
+- **Async/data-fetch patterns are improved but not uniform**
+  - `useAsyncEffect` / `usePaginatedResource` exist and are used in several screens, but some flows still use bespoke `useEffect` + local state patterns.
+- **Contract drift risk remains**
+  - `frontend/src/lib/types.ts` is hand-maintained and can drift from backend `JsonResource` outputs (especially nested resources) without a shared schema/types generation step.
 
 ## 3) Refactor Opportunities (High-Level Only)
 
-### Opportunity A - Backend: Consolidate "Job Query" concerns (filters/sort/pagination) into reusable request + query builder (Implemented)
+### Opportunity D — Frontend: Finish standardizing fetching
 
-- **What**: Introduce a dedicated query/request object (e.g., `JobIndexRequest`) + a single "job query" builder that:
-  - Validates filters once, clamps pagination once, applies sorting once.
-  - Is reused by `JobController` and `EmployerJobController`.
-- **Pros**: Removes duplication; makes filters consistent; easier to add new filters; fewer bugs.
-- **Cons**: Slight upfront complexity; must preserve existing behavior precisely.
-- **Risk/Effort**: **Risk: Medium / Effort: Medium**
-- **What could break**: Filter semantics (`is_remote`, salary handling), default sort order, pagination meta, and tests that assert result ordering.
-
-### Opportunity B - Backend: Move resume storage concerns to a dedicated service (and align "resume download" authorization) (Implemented)
-
-- **What**: Centralize resume file operations (store/delete/copy/metadata) into a `ResumeService` used by:
-  - `ProfileController` (profile resume upload/download/delete),
-  - `ApplicationService` (apply with uploaded resume or profile resume),
-  - `EmployerApplicationController` (download application resume),
-  - plus optionally introduce `ApplicationPolicy` for ownership checks.
-- **Pros**: Clear boundary; less repeated Storage logic; easier to test; consistent file naming and error handling.
-- **Cons**: Refactor touches multiple flows; requires careful testing of file paths and permission checks.
-- **Risk/Effort**: **Risk: Medium / Effort: Medium**
-- **What could break**: Resume download endpoints, stored file paths, profile resume reuse on application, and existing feature tests around resumes.
-
-### Opportunity C - Frontend: Introduce a small "API client" layer per domain (jobs/applications/profile/auth) (Implemented)
-
-- **What**: Replace scattered `apiRequest("string")` calls with typed functions:
-  - `src/lib/clients/jobs.ts`, `applications.ts`, `profile.ts`, `auth.ts` (or `src/features/*/api.ts`).
-  - Include shared helpers for pagination and querystring building.
-- **Pros**: Clear boundaries; safer refactors; simpler components; consistent error mapping.
-- **Cons**: Adds files; requires a pass through call sites.
+- **What**: Migrate remaining fetch flows to `useAsyncEffect` (non-paginated) and `usePaginatedResource` (paginated), keeping domain logic in `frontend/src/lib/clients/*` or feature hooks.
+- **Pros**: Less duplication; fewer abort/cleanup bugs; more consistent UX; clearer “data vs UI” separation.
+- **Cons**: Requires touching many call sites; can be tedious; easy to introduce subtle loading-state regressions.
 - **Risk/Effort**: **Risk: Low–Medium / Effort: Medium**
-- **What could break**: Mostly compile-time; runtime risks are mismatched endpoint paths/params and subtle querystring differences.
+- **What could break**: Loading/error UX, pagination controls, and edge cases around navigation/unmounts.
 
-### Opportunity D — Frontend: Break up `JobsClient.tsx` into feature hooks + presentational components
+### Opportunity F — Frontend: Make URL the single source of truth for Jobs listing state
 
-- **What**: Split into composable hooks:
-  - `useJobFiltersFromUrl`, `usePaginatedJobs`, `useSavedJobs`, `useAppliedJobs`,
-  - and smaller UI components for filter controls, results list, saved sidebar.
-- **Pros**: Major readability win; easier testing; isolated changes; reduces regressions.
-- **Cons**: A “big move” that can destabilize behavior if not done incrementally.
-- **Risk/Effort**: **Risk: Medium / Effort: Medium–High**
-- **What could break**: URL/state sync behavior, saved/applied toggles, pagination, and modal interactions.
+- **What**: Refactor `frontend/src/app/jobs/JobsClient.tsx` to use `frontend/src/features/jobs/useJobsUrlState.ts` for `page/per_page/filters` and remove “sync URL → state” effects entirely.
+- **Pros**: Removes `setState`-in-effect smell; fewer edge cases; easier deep-linking and back/forward navigation semantics.
+- **Cons**: Needs careful UX choices for “draft filters vs applied filters” and how/when URL updates.
+- **Risk/Effort**: **Risk: Medium / Effort: Medium**
+- **What could break**: Filter apply/clear behavior, pagination stability, back/forward navigation, and querystring semantics.
 
-### Opportunity E — Cross-cutting: Establish a single source of truth for API contracts (OpenAPI or generated TS types)
+### Opportunity E — Cross-cutting: Contract as a source of truth (OpenAPI/types generation)
 
-- **What**: Add a contract layer:
-  - Generate OpenAPI from Laravel (or maintain manually), then generate TS types/client for frontend.
-  - Alternatively, generate lightweight TS types from backend resources/tests if OpenAPI is too heavy.
-- **Pros**: Reduces contract drift; makes refactors safer; improves onboarding and tooling.
-- **Cons**: Non-trivial setup; ongoing discipline required.
-- **Risk/Effort**: **Risk: Medium–High / Effort: High**
-- **What could break**: Type generation pipeline/CI; initial mismatch between actual responses and declared schema.
+- **What**: Add an API schema (OpenAPI or equivalent) and generate TS types (and optionally clients) to reduce drift between backend resources and frontend types.
+- **Pros**: Safer refactors; easier onboarding; compile-time safety; less “guessing” nested shapes.
+- **Cons**: Upfront setup; requires discipline to keep schema in sync.
+- **Risk/Effort**: **Risk: Low–Medium / Effort: Medium–High**
+- **What could break**: Mostly compile-time; runtime issues only if the schema doesn’t match actual production behavior.
 
-## 4) Clarifying Questions (Before Any Refactor)
+## 4) Clarifying Questions (Before Any Further Refactor)
 
-1. **Preferred architecture direction**:
-   - Keep Laravel "classic" structure (Controllers + FormRequests + Services), or move toward a domain/feature module layout (e.g., `Domains/Jobs`, `Domains/Applications`)?
-2. **API contract guarantees**:
-   - Are response shapes considered stable/public (especially nested employer/applicant payloads), or can we adjust them during refactor if tests still pass?
-3. **Frontend direction**:
-   - Do you want a simple internal API client + custom hooks approach, or are you open to introducing a data-fetching library (e.g., React Query/SWR) later?
-4. **Repo hygiene scope**:
-   - Should removing committed artifacts (`backend/vendor`, `frontend/node_modules`, `frontend/.next`, committed `.env`) be part of the refactor plan, or considered out-of-scope for now?
-5. **Incremental vs. big-bang**:
-   - Do you prefer incremental refactors behind unchanged routes/contracts (safer), or is a larger restructure acceptable if it improves maintainability quickly?
-
----
-
-If you confirm which opportunities you want first (A–E) and answer the questions above, I can propose a concrete, step-by-step refactor plan and only then start implementing changes.
+1. Jobs listing: should the **URL be the source of truth** for `page/per_page/filters`, or do you prefer local state with URL syncing?
+2. Jobs filters UX: do you want **draft filters** (user edits without immediately changing results) or “instant apply” behavior?
+3. Is the API contract **locked**, or can response shapes evolve if the frontend stays compatible?
+4. For types: do you want schema generation now (Opportunity E) or keep `frontend/src/lib/types.ts` hand-maintained for the assessment?

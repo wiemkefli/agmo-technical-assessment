@@ -1,11 +1,5 @@
 import type { Application } from "@/lib/types";
-
-const STATUSES: Array<{ value: string; label: string }> = [
-  { value: "submitted", label: "Submitted" },
-  { value: "reviewed", label: "Reviewed" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "rejected", label: "Rejected" },
-];
+import { APPLICATION_STATUSES } from "@/lib/applicationStatus";
 
 export function ApplicantsTable({
   applications,
@@ -64,7 +58,7 @@ export function ApplicantsTable({
                     onChange={(e) => onUpdateStatus(app.id, e.target.value)}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {STATUSES.map((s) => (
+                    {APPLICATION_STATUSES.map((s) => (
                       <option key={s.value} value={s.value}>
                         {s.label}
                       </option>

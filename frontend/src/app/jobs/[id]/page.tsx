@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { APIError, getErrorMessage } from "@/lib/api";
 import * as jobsClient from "@/lib/clients/jobs";
@@ -9,6 +9,7 @@ import type { Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { formatSalary } from "@/lib/salary";
+import { useAsyncEffect } from "@/lib/hooks/useAsyncEffect";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -20,37 +21,39 @@ export default function JobDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    jobsClient
-      .show(id)
-      .then((res) => alive && setJob(res.data))
-      .catch((e: unknown) => alive && setError(getErrorMessage(e, "Not found")))
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [id]);
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await jobsClient.show(id, { signal });
+        if (!isActive()) return;
+        setJob(res.data);
+      } catch (e: unknown) {
+        if (!isActive()) return;
+        setError(getErrorMessage(e, "Not found"));
+      } finally {
+        if (!isActive()) return;
+        setLoading(false);
+      }
+    },
+    [id],
+  );
 
-  useEffect(() => {
-    if (!token || role !== "applicant") return;
-    let alive = true;
-    appliedJobsClient
-      .ids(token)
-      .then((res) => {
-        if (!alive) return;
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      if (!token || role !== "applicant") return;
+      try {
+        const res = await appliedJobsClient.ids(token, { signal });
+        if (!isActive()) return;
         setAlreadyApplied(res.data.some((a) => String(a.job_id) === String(id)));
-      })
-      .catch(() => {
-        if (!alive) return;
+      } catch {
+        if (!isActive()) return;
         setAlreadyApplied(false);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [id, token, role]);
+      }
+    },
+    [id, token, role],
+  );
 
   const handleApply = async ({
     message,

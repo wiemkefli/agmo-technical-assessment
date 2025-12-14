@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Protected } from "@/components/Protected";
 import { JobForm } from "@/components/JobForm";
 import * as employerJobsClient from "@/lib/clients/employerJobs";
 import type { Job, JobFormPayload } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
+import { useAsyncEffect } from "@/lib/hooks/useAsyncEffect";
 
 export default function EmployerJobEditPage() {
   const params = useParams<{ id: string }>();
@@ -16,19 +17,21 @@ export default function EmployerJobEditPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!token) return;
-    let alive = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    employerJobsClient
-      .show(id, token)
-      .then((res) => alive && setJob(res.data))
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [id, token]);
+  useAsyncEffect(
+    async ({ signal, isActive }) => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const res = await employerJobsClient.show(id, token, { signal });
+        if (!isActive()) return;
+        setJob(res.data);
+      } finally {
+        if (!isActive()) return;
+        setLoading(false);
+      }
+    },
+    [id, token],
+  );
 
   const handleUpdate = async (payload: JobFormPayload) => {
     if (!token) return;

@@ -1,52 +1,44 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Protected } from "@/components/Protected";
 import { getErrorMessage } from "@/lib/api";
 import * as employerJobsClient from "@/lib/clients/employerJobs";
-import type { Job, PaginatedResponse } from "@/lib/types";
+import type { Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { JobCard } from "@/components/JobCard";
 import { EmployerJobModal } from "@/components/EmployerJobModal";
 import { EmployerApplicationsModal } from "@/components/EmployerApplicationsModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PaginationControls } from "@/components/PaginationControls";
+import { usePaginatedResource } from "@/lib/hooks/usePaginatedResource";
 
 export default function EmployerJobsPage() {
   const { token } = useAuthStore();
-  const [data, setData] = useState<PaginatedResponse<Job> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [editJobId, setEditJobId] = useState<number | null>(null);
   const [applicationsJobId, setApplicationsJobId] = useState<number | null>(
     null,
   );
   const [deleteJobId, setDeleteJobId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [page, setPage] = useState(1);
   const perPage = 10;
 
-  const reloadJobs = useCallback(() => {
-    if (!token) return;
-    let alive = true;
-    setLoading(true);
-    setError(null);
-    employerJobsClient
-      .list({ page, per_page: perPage }, token)
-      .then((res) => alive && setData(res))
-      .catch((e: unknown) =>
-        alive && setError((e as Error)?.message ?? "Failed to load jobs"),
-      )
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [page, token]);
+  const fetcher = useCallback(
+    (params: { page: number; per_page: number }, ctx: { signal: AbortSignal }) => {
+      if (!token) throw new Error("Not authenticated");
+      return employerJobsClient.list(params, token, { signal: ctx.signal });
+    },
+    [token],
+  );
 
-  useEffect(() => {
-    const cleanup = reloadJobs();
-    return cleanup;
-  }, [reloadJobs]);
+  const { data, loading, error, page, setPage, refresh, currentPage, lastPage } =
+    usePaginatedResource<Job>({
+      enabled: Boolean(token),
+      fetcher,
+      perPage,
+      deps: [perPage],
+    });
 
   const selectedApplicationsTitle = useMemo(() => {
     if (!applicationsJobId || !data) return undefined;
@@ -61,24 +53,21 @@ export default function EmployerJobsPage() {
   const confirmDelete = useCallback(async () => {
     if (!token || deleteJobId === null) return;
     setDeleting(true);
-    setError(null);
+    setActionError(null);
     try {
       await employerJobsClient.remove(deleteJobId, token);
       setDeleteJobId(null);
       if (data && data.data.length === 1 && page > 1) {
         setPage((p) => Math.max(1, p - 1));
       } else {
-        reloadJobs();
+        refresh();
       }
     } catch (e: unknown) {
-      setError(getErrorMessage(e, "Failed to delete job"));
+      setActionError(getErrorMessage(e, "Failed to delete job"));
     } finally {
       setDeleting(false);
     }
-  }, [token, deleteJobId, reloadJobs, data, page]);
-
-  const currentPage = data?.meta.current_page ?? page;
-  const lastPage = data?.meta.last_page ?? currentPage;
+  }, [token, deleteJobId, data, page, setPage, refresh]);
 
   return (
     <Protected roles={["employer"]}>
@@ -88,6 +77,11 @@ export default function EmployerJobsPage() {
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
+          </div>
+        )}
+        {actionError && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {actionError}
           </div>
         )}
         {data && (
@@ -190,7 +184,7 @@ export default function EmployerJobsPage() {
           mode="edit"
           jobId={editJobId}
           onClose={() => setEditJobId(null)}
-          onDone={reloadJobs}
+          onDone={refresh}
         />
       )}
 
