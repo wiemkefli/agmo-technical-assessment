@@ -58,6 +58,10 @@ This repository implements a mini job board where **employers** can create and m
 - Styling: Tailwind CSS `^4`
 - HTTP client: `fetch` wrapper (`frontend/src/lib/api.ts`)
 
+### Database
+
+- MySQL (default local DB config in `backend/.env.example`)
+
 ## 4) Repository Structure
 
 ```
