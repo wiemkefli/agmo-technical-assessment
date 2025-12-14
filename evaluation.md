@@ -36,7 +36,7 @@ Spec source of truth: `Full Stack Engineer Technical Assessment.md`
 ### Applicant user journey
 
 1. Register / login as an applicant → receives a Sanctum bearer token (`POST /api/auth/register`, `POST /api/auth/login`; `backend/routes/api.php`)
-2. Browse published jobs; when logged in as applicant, the main list uses a “recommended jobs” feed (`GET /api/jobs` and `GET /api/recommended-jobs`; `backend/app/Http/Controllers/JobController.php`, `backend/app/Http/Controllers/RecommendationController.php`, `frontend/src/app/jobs/JobsClient.tsx`)
+2. Browse published jobs; when logged in as applicant, the main list uses a “recommended jobs” feed (currently excludes applied jobs, but still includes saved jobs) (`GET /api/jobs` and `GET /api/recommended-jobs`; `backend/app/Http/Controllers/JobController.php`, `backend/app/Http/Controllers/RecommendationController.php`, `frontend/src/app/jobs/JobsClient.tsx`)
 3. View a published job detail page (`GET /api/jobs/{job}`; `backend/app/Http/Controllers/JobController.php`, `frontend/src/app/jobs/[id]/page.tsx`)
 4. Apply to a job with a required message and optional PDF resume (upload a file or reuse saved profile resume) (`POST /api/jobs/{job}/apply`; `backend/app/Services/ApplicationService.php`, `backend/app/Http/Requests/ApplicationStoreRequest.php`, `frontend/src/components/ApplicationForm.tsx`)
 5. Save/unsave jobs and view saved/applied history (`/saved-jobs`, `/applied-jobs`; `backend/app/Http/Controllers/SavedJobController.php`, `backend/app/Http/Controllers/ApplicationController.php`)
@@ -46,7 +46,7 @@ Spec source of truth: `Full Stack Engineer Technical Assessment.md`
 
 - Auth: `frontend/src/app/login/page.tsx`, `frontend/src/app/register/page.tsx` → `POST /api/auth/login`, `POST /api/auth/register` (`frontend/src/store/auth.ts`)
 - Applicant:
-  - Job list: `frontend/src/app/jobs/page.tsx`, `frontend/src/app/jobs/JobsClient.tsx` → `GET /api/jobs` or `GET /api/recommended-jobs`, plus `GET /api/saved-jobs/ids`, `GET /api/saved-jobs`, `GET /api/applied-jobs`
+  - Job list: `frontend/src/app/jobs/page.tsx`, `frontend/src/app/jobs/JobsClient.tsx` → unauthenticated/non-applicant uses `GET /api/jobs`; applicant uses `GET /api/recommended-jobs`; also calls `GET /api/saved-jobs/ids`, `GET /api/saved-jobs`, `GET /api/applied-jobs`
   - Job detail/apply: `frontend/src/app/jobs/[id]/page.tsx` → `GET /api/jobs/{job}`, `POST /api/jobs/{job}/apply`
   - Saved jobs: `frontend/src/app/saved-jobs/page.tsx` → `GET /api/saved-jobs`, `DELETE /api/jobs/{job}/save`
   - Applied jobs: `frontend/src/app/applied-jobs/page.tsx` → `GET /api/applied-jobs`
@@ -70,7 +70,7 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 | Roles: middleware/guards protect endpoints correctly | PASS | `role` middleware alias (`backend/bootstrap/app.php`) and route groups in `backend/routes/api.php`; middleware returns 401/403 JSON (`backend/app/Http/Middleware/EnsureUserRole.php`) |
 | Roles: prevent privilege escalation (applicant blocked from employer endpoints) | PASS | Employer group uses `role:employer` (`backend/routes/api.php`); policy checks ownership (`backend/app/Policies/JobPolicy.php`); tested in `backend/tests/Feature/EmployerJobAuthorizationTest.php` |
 | **Job Listings: employer can Create/Edit/Delete/View own jobs only** | PASS | Employer endpoints (`backend/routes/api.php` → `EmployerJobController`); `JobPolicy::update/delete/viewApplications` enforce `job.employer_id === user.id` (`backend/app/Policies/JobPolicy.php`) |
-| Job Listings: applicant can browse all published jobs | PARTIAL | API supports full published browse (`GET /api/jobs`; `backend/app/Http/Controllers/JobController.php`), but the applicant UI defaults to `GET /api/recommended-jobs` (excludes saved/applied jobs) with no “view all” toggle (`frontend/src/app/jobs/JobsClient.tsx`) |
+| Job Listings: applicant can browse all published jobs | PARTIAL | API supports full published browse (`GET /api/jobs`; `backend/app/Http/Controllers/JobController.php`), but the applicant UI uses `GET /api/recommended-jobs` and hides jobs the applicant already applied to (no “show all published (incl. applied)” toggle) (`frontend/src/app/jobs/JobsClient.tsx`, `backend/app/Http/Controllers/RecommendationController.php`) |
 | Job Listings: fields exist (`title`, `description`, `location`, `salary_range`, `is_remote`, `status`) | PASS | Output includes these fields (`backend/app/Http/Resources/JobResource.php`); input accepts `salary_range` (and maps to min/max) (`backend/app/Http/Requests/JobStoreRequest.php`, `backend/app/Http/Requests/JobUpdateRequest.php`) |
 | Job Listings: status/publishing logic correct | PASS | Publishing sets/clears `published_at` when status changes (`backend/app/Services/JobService.php`); public list sorted by `published_at` (`backend/app/Http/Controllers/JobController.php`) |
 | **Job Applications: applicant can apply with a short message** | PASS | `POST /api/jobs/{job}/apply` (`backend/routes/api.php`); `message` required (`backend/app/Http/Requests/ApplicationStoreRequest.php`); create enforces published + unique (`backend/app/Services/ApplicationService.php`) |
@@ -107,11 +107,11 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
    - Where to fix: remove `backend/.env` from version control; rely on `backend/.env.example`.
    - Suggested fix: add `backend/.env` to `.gitignore` and rotate/regenerate `APP_KEY` on real deployments.
 
-3. **Applicant job board is “recommended” only**
-   - Symptom: when authenticated as `applicant`, `/jobs` uses `GET /api/recommended-jobs` instead of `GET /api/jobs`.
-   - Why it fails spec: the requirement is to browse all published jobs; recommendations exclude saved/applied jobs and can hide published listings.
-   - Where to fix: `frontend/src/app/jobs/JobsClient.tsx` (endpoint selection).
-   - Suggested fix: add an explicit “All jobs / Recommended” toggle, default to “All jobs”, and keep recommendations as an optional view.
+3. **Applicant job board hides already-applied jobs**
+   - Symptom: `/jobs` hides jobs present in the applicant’s `/api/applied-jobs` list (`frontend/src/app/jobs/JobsClient.tsx`).
+   - Why it fails spec: the requirement is to browse all published jobs; hiding already-applied jobs can hide published listings.
+   - Where to fix: `frontend/src/app/jobs/JobsClient.tsx` (applied-job filtering and/or endpoint selection).
+   - Suggested fix: add a “Hide applied jobs” toggle (default off to meet the spec) and keep the current behavior as an optional UX preference.
 
 ## 5) Nice-to-have improvements
 

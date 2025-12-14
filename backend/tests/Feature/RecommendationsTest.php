@@ -12,7 +12,7 @@ class RecommendationsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_recommended_jobs_excludes_saved_and_applied_jobs(): void
+    public function test_recommended_jobs_excludes_applied_jobs_but_includes_saved_jobs(): void
     {
         $employer = User::factory()->employer()->create();
 
@@ -34,9 +34,8 @@ class RecommendationsTest extends TestCase
 
         $ids = collect($res->json('data'))->pluck('id')->all();
 
-        $this->assertNotContains($savedJob->id, $ids);
         $this->assertNotContains($appliedJob->id, $ids);
+        $this->assertContains($savedJob->id, $ids);
         $this->assertContains($otherJob->id, $ids);
     }
 }
-

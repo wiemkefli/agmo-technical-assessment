@@ -29,9 +29,8 @@ class RecommendationController extends Controller
         $perPage = max(1, min($perPage, 50));
 
         $user = $request->user();
-        $savedIds = $user->savedJobs()->pluck('jobs.id')->all();
         $appliedIds = $user->applications()->pluck('job_id')->all();
-        $excludeIds = array_values(array_unique(array_merge($savedIds, $appliedIds)));
+        $excludeIds = array_values(array_unique($appliedIds));
 
         $query = Job::query()
             ->where('status', 'published')
