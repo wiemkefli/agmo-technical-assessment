@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Protected } from "@/components/Protected";
-import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
+import * as employerJobsClient from "@/lib/clients/employerJobs";
 import type { Job, PaginatedResponse } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { JobCard } from "@/components/JobCard";
@@ -30,7 +31,8 @@ export default function EmployerJobsPage() {
     let alive = true;
     setLoading(true);
     setError(null);
-    apiPaginated<Job>(`employer/jobs?page=${page}&per_page=${perPage}`, { token })
+    employerJobsClient
+      .list({ page, per_page: perPage }, token)
       .then((res) => alive && setData(res))
       .catch((e: unknown) =>
         alive && setError((e as Error)?.message ?? "Failed to load jobs"),
@@ -61,10 +63,7 @@ export default function EmployerJobsPage() {
     setDeleting(true);
     setError(null);
     try {
-      await apiRequest(`employer/jobs/${deleteJobId}`, {
-        method: "DELETE",
-        token,
-      });
+      await employerJobsClient.remove(deleteJobId, token);
       setDeleteJobId(null);
       if (data && data.data.length === 1 && page > 1) {
         setPage((p) => Math.max(1, p - 1));

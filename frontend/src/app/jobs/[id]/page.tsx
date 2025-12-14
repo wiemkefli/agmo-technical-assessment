@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { APIError, apiRequest, getErrorMessage } from "@/lib/api";
-import type { AppliedJobStatus, Job } from "@/lib/types";
+import { APIError, getErrorMessage } from "@/lib/api";
+import * as jobsClient from "@/lib/clients/jobs";
+import * as appliedJobsClient from "@/lib/clients/appliedJobs";
+import type { Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { formatSalary } from "@/lib/salary";
@@ -22,7 +24,8 @@ export default function JobDetailPage() {
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    apiRequest<{ data: Job }>(`jobs/${id}`)
+    jobsClient
+      .show(id)
       .then((res) => alive && setJob(res.data))
       .catch((e: unknown) => alive && setError(getErrorMessage(e, "Not found")))
       .finally(() => alive && setLoading(false));
@@ -34,7 +37,8 @@ export default function JobDetailPage() {
   useEffect(() => {
     if (!token || role !== "applicant") return;
     let alive = true;
-    apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token })
+    appliedJobsClient
+      .ids(token)
       .then((res) => {
         if (!alive) return;
         setAlreadyApplied(res.data.some((a) => String(a.job_id) === String(id)));
@@ -62,18 +66,8 @@ export default function JobDetailPage() {
       return;
     }
 
-    const form = new FormData();
-    form.append("message", message);
-    if (resume) form.append("resume", resume);
-    else if (use_profile_resume) form.append("use_profile_resume", "1");
-
     try {
-      await apiRequest(`jobs/${id}/apply`, {
-        method: "POST",
-        body: form,
-        token,
-        isFormData: true,
-      });
+      await jobsClient.apply(id, { message, resume, use_profile_resume }, token);
       setAlreadyApplied(true);
     } catch (e: unknown) {
       if (

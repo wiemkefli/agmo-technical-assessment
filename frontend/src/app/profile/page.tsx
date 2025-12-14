@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Protected } from "@/components/Protected";
-import { apiRequest, getErrorMessage } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
+import * as profileClient from "@/lib/clients/profile";
 import { useAuthStore } from "@/store/auth";
 
 export default function ProfilePage() {
@@ -36,15 +37,16 @@ export default function ProfilePage() {
     setMessage(null);
     setError(null);
     try {
-      const payload =
-        user.role === "employer"
-          ? { company: company.trim() || null, website: website.trim() || null }
-          : { phone: phone.trim() || null, location: location.trim() || null };
-      await apiRequest("profile", {
-        method: "PATCH",
+      await profileClient.updateProfile(
+        {
+          role: user.role,
+          company: company.trim() || null,
+          website: website.trim() || null,
+          phone: phone.trim() || null,
+          location: location.trim() || null,
+        },
         token,
-        body: JSON.stringify(payload),
-      });
+      );
       await fetchMe();
       setMessage("Saved.");
     } catch (e: unknown) {
@@ -80,15 +82,7 @@ export default function ProfilePage() {
         return;
       }
 
-      const form = new FormData();
-      form.append("resume", resumeFile);
-
-      await apiRequest("profile/resume", {
-        method: "POST",
-        token,
-        body: form,
-        isFormData: true,
-      });
+      await profileClient.uploadResume(resumeFile, token);
 
       await fetchMe();
       setResumeMessage("Resume saved.");
@@ -106,7 +100,7 @@ export default function ProfilePage() {
     setResumeError(null);
     setResumeMessage(null);
     try {
-      await apiRequest("profile/resume", { method: "DELETE", token });
+      await profileClient.deleteResume(token);
       await fetchMe();
       setResumeMessage("Resume removed.");
     } catch (e: unknown) {

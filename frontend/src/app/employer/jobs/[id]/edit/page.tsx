@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Protected } from "@/components/Protected";
 import { JobForm } from "@/components/JobForm";
-import { apiRequest } from "@/lib/api";
+import * as employerJobsClient from "@/lib/clients/employerJobs";
 import type { Job, JobFormPayload } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 
@@ -21,7 +21,8 @@ export default function EmployerJobEditPage() {
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    apiRequest<{ data: Job }>(`employer/jobs/${id}`, { token })
+    employerJobsClient
+      .show(id, token)
       .then((res) => alive && setJob(res.data))
       .finally(() => alive && setLoading(false));
     return () => {
@@ -31,17 +32,13 @@ export default function EmployerJobEditPage() {
 
   const handleUpdate = async (payload: JobFormPayload) => {
     if (!token) return;
-    await apiRequest(`employer/jobs/${id}`, {
-      method: "PATCH",
-      token,
-      body: JSON.stringify(payload),
-    });
+    await employerJobsClient.update(id, payload, token);
     router.push("/employer/jobs");
   };
 
   const handleDelete = async () => {
     if (!token) return;
-    await apiRequest(`employer/jobs/${id}`, { method: "DELETE", token });
+    await employerJobsClient.remove(id, token);
     router.push("/employer/jobs");
   };
 

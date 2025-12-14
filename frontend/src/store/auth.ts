@@ -2,7 +2,8 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { apiRequest, getErrorMessage } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
+import * as authClient from "@/lib/clients/auth";
 import type { Role, User } from "@/lib/types";
 
 interface AuthState {
@@ -42,10 +43,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ loading: true, error: null });
         try {
-          const res = await apiRequest<{ data: User; token: string }>("auth/login", {
-            method: "POST",
-            body: JSON.stringify({ email, password }),
-          });
+          const res = await authClient.login({ email, password });
           set({ user: res.data, token: res.token, role: res.data.role });
         } catch (e: unknown) {
           const message = getErrorMessage(e, "Login failed");
@@ -59,10 +57,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (payload) => {
         set({ loading: true, error: null });
         try {
-          const res = await apiRequest<{ data: User; token: string }>("auth/register", {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
+          const res = await authClient.register(payload);
           set({ user: res.data, token: res.token, role: res.data.role });
         } catch (e: unknown) {
           const message = getErrorMessage(e, "Register failed");
@@ -79,10 +74,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           if (token) {
             try {
-              await apiRequest("auth/logout", {
-                method: "POST",
-                token,
-              });
+              await authClient.logout(token);
             } catch {
               // best-effort logout; token may already be invalid/revoked
             }
@@ -97,7 +89,7 @@ export const useAuthStore = create<AuthState>()(
         if (!token) return;
         set({ loading: true });
         try {
-          const res = await apiRequest<{ data: User }>("auth/me", { token });
+          const res = await authClient.me(token);
           set({ user: res.data, role: res.data.role });
         } catch {
           set({ user: null, token: null, role: null });

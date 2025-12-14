@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiRequest, getErrorMessage } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
+import * as employerJobsClient from "@/lib/clients/employerJobs";
+import * as employerApplicationsClient from "@/lib/clients/employerApplications";
 import type { Application } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicantsTable } from "@/components/ApplicantsTable";
@@ -33,9 +35,8 @@ export function EmployerApplicationsModal({
     setLoading(true);
     setLoadError(null);
     setActionError(null);
-    apiRequest<{ data: Application[] }>(`employer/jobs/${jobId}/applications`, {
-      token,
-    })
+    employerJobsClient
+      .applications(jobId, token)
       .then((res) => alive && setApplications(res.data))
       .catch((e: unknown) =>
         alive && setLoadError(getErrorMessage(e, "Failed to load applications")),
@@ -65,14 +66,7 @@ export function EmployerApplicationsModal({
     );
 
     try {
-      const res = await apiRequest<{ data: Application }>(
-        `employer/applications/${applicationId}`,
-        {
-          method: "PATCH",
-          token,
-          body: JSON.stringify({ status: nextStatus }),
-        },
-      );
+      const res = await employerApplicationsClient.updateStatus(applicationId, nextStatus, token);
       setApplications((curr) =>
         curr.map((a) => (a.id === applicationId ? res.data : a)),
       );

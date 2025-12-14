@@ -5,7 +5,8 @@ import { Protected } from "@/components/Protected";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
 import { PaginationControls } from "@/components/PaginationControls";
-import { apiPaginated, getErrorMessage } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
+import * as appliedJobsClient from "@/lib/clients/appliedJobs";
 import type { Application, Job, PaginatedResponse } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 
@@ -30,9 +31,8 @@ export default function AppliedJobsPage() {
     if (!token) return;
     let alive = true;
     const key = `${token}:${page}:${perPage}`;
-    apiPaginated<Application>(`applied-jobs?page=${page}&per_page=${perPage}`, {
-      token,
-    })
+    appliedJobsClient
+      .list({ page, per_page: perPage }, token)
       .then((res) => {
         if (!alive) return;
         setData(res);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { APIError, apiRequest, getErrorMessage } from "@/lib/api";
+import { APIError, getErrorMessage } from "@/lib/api";
+import * as jobsClient from "@/lib/clients/jobs";
 import type { Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "./ApplicationForm";
@@ -31,7 +32,8 @@ export function JobModal({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    apiRequest<{ data: Job }>(`jobs/${jobId}`)
+    jobsClient
+      .show(jobId)
       .then((res) => alive && setJob(res.data))
       .catch((e: unknown) => alive && setError(getErrorMessage(e, "Not found")))
       .finally(() => alive && setLoading(false));
@@ -63,18 +65,8 @@ export function JobModal({
       return;
     }
 
-    const form = new FormData();
-    form.append("message", message);
-    if (resume) form.append("resume", resume);
-    else if (use_profile_resume) form.append("use_profile_resume", "1");
-
     try {
-      await apiRequest(`jobs/${jobId}/apply`, {
-        method: "POST",
-        body: form,
-        token,
-        isFormData: true,
-      });
+      await jobsClient.apply(jobId, { message, resume, use_profile_resume }, token);
       onApplied?.(jobId);
     } catch (e: unknown) {
       if (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Protected } from "@/components/Protected";
-import { apiRequest } from "@/lib/api";
+import * as employerJobsClient from "@/lib/clients/employerJobs";
 import type { Application } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicantsTable } from "@/components/ApplicantsTable";
@@ -20,9 +20,8 @@ export default function EmployerJobApplicationsPage() {
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    apiRequest<{ data: Application[] }>(`employer/jobs/${id}/applications`, {
-      token,
-    })
+    employerJobsClient
+      .applications(id, token)
       .then((res) => alive && setApplications(res.data))
       .finally(() => alive && setLoading(false));
     return () => {

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Protected } from "@/components/Protected";
 import { JobForm } from "@/components/JobForm";
-import { apiRequest } from "@/lib/api";
+import * as employerJobsClient from "@/lib/clients/employerJobs";
 import type { JobFormPayload } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 
@@ -13,11 +13,7 @@ export default function EmployerJobNewPage() {
 
   const handleCreate = async (payload: JobFormPayload) => {
     if (!token) throw new Error("You are not logged in.");
-    await apiRequest("employer/jobs", {
-      method: "POST",
-      token,
-      body: JSON.stringify(payload),
-    });
+    await employerJobsClient.create(payload, token);
     router.push("/employer/jobs");
   };
 

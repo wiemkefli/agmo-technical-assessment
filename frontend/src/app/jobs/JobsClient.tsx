@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
-import type { AppliedJobStatus, Job, PaginatedResponse } from "@/lib/types";
+import { getErrorMessage } from "@/lib/api";
+import * as jobsClient from "@/lib/clients/jobs";
+import * as appliedJobsClient from "@/lib/clients/appliedJobs";
+import * as savedJobsClient from "@/lib/clients/savedJobs";
+import type { Job, PaginatedResponse } from "@/lib/types";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
 import { PaginationControls } from "@/components/PaginationControls";
@@ -134,20 +137,49 @@ export function JobsClient() {
     return params.toString();
   };
 
+  const toJobListParams = ({
+    page,
+    per_page,
+    nextFilters,
+  }: {
+    page: number;
+    per_page: number;
+    nextFilters: JobFilters;
+  }): jobsClient.JobListParams => {
+    const q = nextFilters.q.trim();
+    const location = nextFilters.location.trim();
+
+    const is_remote =
+      nextFilters.work_arrangement === "remote"
+        ? 1
+        : nextFilters.work_arrangement === "onsite"
+          ? 0
+          : undefined;
+
+    return {
+      page,
+      per_page,
+      q: q || undefined,
+      location: location || undefined,
+      is_remote,
+      salary_min: nextFilters.salary_min.trim() || undefined,
+      salary_max: nextFilters.salary_max.trim() || undefined,
+      sort: nextFilters.sort,
+    };
+  };
+
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(null);
-    const qs = buildQuery({
+    const params = toJobListParams({
       page: pageState,
       per_page: perPageState,
       nextFilters: filters,
     });
 
-    const endpoint =
-      `jobs?${qs}`;
-
-    apiPaginated<Job>(endpoint, token ? { token } : undefined)
+    jobsClient
+      .list(params, token ? { token } : undefined)
       .then((res) => alive && setData(res))
       .catch((e: unknown) =>
         alive && setError(getErrorMessage(e, "Failed to load jobs")),
@@ -161,7 +193,8 @@ export function JobsClient() {
   useEffect(() => {
     if (!token || role !== "applicant") return;
     let alive = true;
-    apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token })
+    appliedJobsClient
+      .ids(token)
       .then((res) => {
         if (!alive) return;
         setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
@@ -179,7 +212,8 @@ export function JobsClient() {
 
   const reloadSavedJobs = () => {
     if (!token || role !== "applicant") return;
-    apiPaginated<Job>("saved-jobs?per_page=5", { token })
+    savedJobsClient
+      .listPreview({ per_page: 5 }, token)
       .then((res) => {
         setSavedJobs(res.data);
       })
@@ -190,7 +224,8 @@ export function JobsClient() {
 
   const reloadSavedJobIds = () => {
     if (!token || role !== "applicant") return;
-    apiRequest<{ data: number[] }>("saved-jobs/ids", { token })
+    savedJobsClient
+      .ids(token)
       .then((res) => setSavedJobIds(new Set(res.data)))
       .catch(() => setSavedJobIds(new Set()));
   };
@@ -225,7 +260,7 @@ const markApplied = (jobId: number) => {
 
     try {
       if (isSaved) {
-        await apiRequest(`jobs/${job.id}/save`, { method: "DELETE", token });
+        await savedJobsClient.unsave(job.id, token);
         setSavedJobIds((prev) => {
           const next = new Set(prev);
           next.delete(job.id);
@@ -233,7 +268,7 @@ const markApplied = (jobId: number) => {
         });
         setSavedJobs((prev) => prev.filter((j) => j.id !== job.id));
       } else {
-        await apiRequest(`jobs/${job.id}/save`, { method: "POST", token });
+        await savedJobsClient.save(job.id, token);
         setSavedJobIds((prev) => new Set(prev).add(job.id));
         setSavedJobs((prev) => [job, ...prev.filter((j) => j.id !== job.id)].slice(0, 5));
       }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiRequest, getErrorMessage } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api";
+import * as employerJobsClient from "@/lib/clients/employerJobs";
 import type { Job, JobFormPayload } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { JobForm } from "@/components/JobForm";
@@ -30,7 +31,8 @@ export function EmployerJobModal({
   useEffect(() => {
     if (mode !== "edit" || !jobId || !token) return;
     let alive = true;
-    apiRequest<{ data: Job }>(`employer/jobs/${jobId}`, { token })
+    employerJobsClient
+      .show(jobId, token)
       .then((res) => {
         if (!alive) return;
         setJob(res.data);
@@ -60,17 +62,9 @@ export function EmployerJobModal({
     if (!token) throw new Error("Not authenticated");
 
     if (mode === "create") {
-      await apiRequest("employer/jobs", {
-        method: "POST",
-        token,
-        body: JSON.stringify(payload),
-      });
+      await employerJobsClient.create(payload, token);
     } else if (jobId) {
-      await apiRequest(`employer/jobs/${jobId}`, {
-        method: "PATCH",
-        token,
-        body: JSON.stringify(payload),
-      });
+      await employerJobsClient.update(jobId, payload, token);
     }
 
     onDone();

@@ -5,8 +5,10 @@ import { Protected } from "@/components/Protected";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
 import { PaginationControls } from "@/components/PaginationControls";
-import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
-import type { AppliedJobStatus, Job, PaginatedResponse } from "@/lib/types";
+import { getErrorMessage } from "@/lib/api";
+import * as savedJobsClient from "@/lib/clients/savedJobs";
+import * as appliedJobsClient from "@/lib/clients/appliedJobs";
+import type { Job, PaginatedResponse } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 
 export default function SavedJobsPage() {
@@ -33,7 +35,8 @@ export default function SavedJobsPage() {
     setLoading(true);
     setError(null);
 
-    apiPaginated<Job>(`saved-jobs?page=${page}&per_page=${perPage}`, { token })
+    savedJobsClient
+      .list({ page, per_page: perPage }, token)
       .then((res) => alive && setData(res))
       .catch((e: unknown) =>
         alive && setError(getErrorMessage(e, "Failed to load saved jobs")),
@@ -54,7 +57,8 @@ export default function SavedJobsPage() {
   useEffect(() => {
     if (!token) return;
     let alive = true;
-    apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token })
+    appliedJobsClient
+      .ids(token)
       .then((res) => {
         if (!alive) return;
         setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
@@ -85,7 +89,7 @@ export default function SavedJobsPage() {
 
   const unsave = async (jobId: number) => {
     if (!token) return;
-    await apiRequest(`jobs/${jobId}/save`, { method: "DELETE", token });
+    await savedJobsClient.unsave(jobId, token);
     setData((prev) => {
       if (!prev) return prev;
       return {
