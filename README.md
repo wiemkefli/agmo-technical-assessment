@@ -91,6 +91,8 @@ This repository implements a mini job board where **employers** can create and m
 
 ### Backend (Laravel API)
 
+Note: the `mysql` command below requires the MySQL client (`mysql`) to be installed and available on your PATH. If `mysql` is not recognized, either (a) install MySQL and reopen your terminal, or (b) create the database in MySQL Workbench/phpMyAdmin using the name `mini_job_board` (UTF-8/utf8mb4).
+
 macOS/Linux:
 
 ```bash

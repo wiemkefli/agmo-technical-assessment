@@ -155,6 +155,7 @@ Response conventions:
   - Auth: Y
   - Role: applicant
   - Response: same as `GET /applied-jobs` (backwards-compatible alias; marked deprecated in routes)
+  - Note: kept for backwards compatibility with older clients/routes; use `GET /applied-jobs` going forward.
 
 - `GET /employer/jobs/{job}/applications`
   - Auth: Y
@@ -214,4 +215,3 @@ No automated test suite is included. Linting is available:
 cd frontend
 npm run lint
 ```
-
