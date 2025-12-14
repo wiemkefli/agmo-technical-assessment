@@ -2,56 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\EmployerJobIndexRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Http\Resources\JobCollection;
 use App\Http\Resources\JobResource;
 use App\Http\Requests\JobStoreRequest;
 use App\Http\Requests\JobUpdateRequest;
 use App\Models\Job;
-use App\Services\JobSearchService;
+use App\Services\JobQueryBuilder;
 use App\Services\JobService;
-use Illuminate\Http\Request;
 
 class EmployerJobController extends Controller
 {
     public function __construct(
         protected JobService $jobService,
-        protected JobSearchService $jobSearchService
+        protected JobQueryBuilder $jobQueryBuilder
     )
     {
     }
 
-    public function index(Request $request)
+    public function index(EmployerJobIndexRequest $request)
     {
         $user = $request->user();
-        $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'is_remote' => ['nullable', 'boolean'],
-            'status' => ['nullable', 'string', 'in:draft,published'],
-            'salary_min' => ['nullable', 'integer', 'min:0'],
-            'salary_max' => ['nullable', 'integer', 'min:0'],
-            'sort' => ['nullable', 'string', 'in:newest,oldest'],
-        ]);
-
-        $perPage = (int) $request->query('per_page', 10);
-        $perPage = max(1, min($perPage, 50));
+        $filters = $request->jobFilters();
 
         $query = Job::query()
             ->where('employer_id', $user->id)
             ->with(['employer.employerProfile']);
 
-        $this->jobSearchService->applyFilters($query, $filters);
+        $this->jobQueryBuilder->applyFilters($query, $filters);
+        $this->jobQueryBuilder->applySort($query, $request->sort(), 'created_at');
 
-        $sort = $filters['sort'] ?? 'newest';
-        if ($sort === 'oldest') {
-            $query->orderBy('created_at')->orderBy('id');
-        } else {
-            $query->orderByDesc('created_at')->orderByDesc('id');
-        }
-
-        $jobs = $query
-            ->paginate($perPage);
+        $jobs = $this->jobQueryBuilder->paginate($query, $request->perPage());
 
         return new JobCollection($jobs);
     }
