@@ -1,0 +1,155 @@
+{
+  "info": {
+    "_postman_id": "1da18ad3-0bd2-488b-b07c-a569ad42a32e",
+    "name": "Mini Job Board API - Validation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Validation",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Negative: Unauthenticated Profile => 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}{{api_prefix}}/profile"
+              }
+            },
+            {
+              "name": "Negative: Invalid Login => 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "const json = pm.response.json();",
+                      "pm.test('Message Invalid credentials', () => pm.expect(json.message).to.eql('Invalid credentials'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{employer_email}}\",\n  \"password\": \"wrong-password\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/auth/login"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validation",
+          "item": [
+            {
+              "name": "Negative: Create Job Missing Title => 422",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has errors.title', () => pm.expect(json.errors && json.errors.title).to.be.ok);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_employer}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Missing title\",\n  \"location\": \"Kuala Lumpur\",\n  \"salary_range\": \"3000-5000\",\n  \"is_remote\": true,\n  \"status\": \"draft\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/employer/jobs"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Not Found",
+          "item": [
+            {
+              "name": "Negative: Not Found Job => 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}{{api_prefix}}/jobs/999999999"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

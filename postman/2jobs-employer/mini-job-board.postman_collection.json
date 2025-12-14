@@ -1,0 +1,249 @@
+{
+  "info": {
+    "_postman_id": "268eb79b-38dc-4f96-8727-847d524c268b",
+    "name": "Mini Job Board API - Jobs (Employer)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Jobs — Employer",
+      "item": [
+        {
+          "name": "List",
+          "item": [
+            {
+              "name": "List Own Jobs",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has data array', () => pm.expect(json.data).to.be.an('array'));",
+                      "pm.test('Has meta', () => pm.expect(json.meta).to.be.an('object'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_employer}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}{{api_prefix}}/employer/jobs?per_page=10&sort=newest"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CRUD",
+          "item": [
+            {
+              "name": "Create Job (Draft) (saves job_id)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('draft_job_title', 'Draft Job ' + Date.now());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                      "const json = pm.response.json();",
+                      "pm.test('Status draft', () => pm.expect(json.data.status).to.eql('draft'));",
+                      "pm.environment.set('job_id', json.data.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_employer}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"{{draft_job_title}}\",\n  \"description\": \"Build APIs and services.\",\n  \"location\": \"Kuala Lumpur\",\n  \"salary_range\": \"3000-5000\",\n  \"is_remote\": true,\n  \"status\": \"draft\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/employer/jobs"
+              }
+            },
+            {
+              "name": "Get Single Own Job (job_id)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.test('Matches job_id', () => pm.expect(json.data.id).to.eql(parseInt(pm.environment.get('job_id'), 10)));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_employer}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}{{api_prefix}}/employer/jobs/{{job_id}}"
+              }
+            },
+            {
+              "name": "Update Job (Draft) (job_id)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.test('Title updated', () => pm.expect(json.data.title).to.contain('Updated'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_employer}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"{{draft_job_title}} (Updated)\",\n  \"is_remote\": false\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/employer/jobs/{{job_id}}"
+              }
+            },
+            {
+              "name": "Create Job (Published) (saves published_job_id)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('published_job_title', 'Published Job ' + Date.now());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                      "const json = pm.response.json();",
+                      "pm.test('Status published', () => pm.expect(json.data.status).to.eql('published'));",
+                      "pm.environment.set('published_job_id', json.data.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_employer}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"{{published_job_title}}\",\n  \"description\": \"A published job for applicant flows.\",\n  \"location\": \"Remote\",\n  \"salary_range\": \"6000-9000\",\n  \"is_remote\": true,\n  \"status\": \"published\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/employer/jobs"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

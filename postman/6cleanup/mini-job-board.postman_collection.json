@@ -1,0 +1,50 @@
+{
+  "info": {
+    "_postman_id": "dfd57959-9b5c-43c4-80f0-0a9c3ffa4bae",
+    "name": "Mini Job Board API - Cleanup",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete Job (Draft) (job_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has message Deleted', () => pm.expect(json.message).to.eql('Deleted'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_employer}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}{{api_prefix}}/employer/jobs/{{job_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}

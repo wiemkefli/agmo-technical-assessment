@@ -1,0 +1,267 @@
+{
+  "info": {
+    "_postman_id": "3b961607-b1f6-46ee-b3f9-c7bb91e86f0c",
+    "name": "Mini Job Board API - Auth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "item": [
+            {
+              "name": "Register Employer",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const current = pm.environment.get('employer_email');",
+                      "if (!current || current === 'employer@example.com') pm.environment.set('employer_email', 'employer+' + Date.now() + '@example.com');",
+                      "if (!pm.environment.get('employer_password')) pm.environment.set('employer_password', 'password');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                      "pm.test('Role employer', () => pm.expect(json.data.role).to.eql('employer'));",
+                      "pm.environment.set('token_employer', json.token);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Acme Inc\",\n  \"email\": \"{{employer_email}}\",\n  \"password\": \"{{employer_password}}\",\n  \"password_confirmation\": \"{{employer_password}}\",\n  \"role\": \"employer\",\n  \"website\": \"https://acme.example\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/auth/register"
+              }
+            },
+            {
+              "name": "Register Applicant",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const current = pm.environment.get('applicant_email');",
+                      "if (!current || current === 'applicant@example.com') pm.environment.set('applicant_email', 'applicant+' + Date.now() + '@example.com');",
+                      "if (!pm.environment.get('applicant_password')) pm.environment.set('applicant_password', 'password');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                      "pm.test('Role applicant', () => pm.expect(json.data.role).to.eql('applicant'));",
+                      "pm.environment.set('token_applicant', json.token);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Demo Applicant\",\n  \"email\": \"{{applicant_email}}\",\n  \"password\": \"{{applicant_password}}\",\n  \"password_confirmation\": \"{{applicant_password}}\",\n  \"role\": \"applicant\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/auth/register"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "item": [
+            {
+              "name": "Login Employer (saves token_employer)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                      "pm.test('Role employer', () => pm.expect(json.data.role).to.eql('employer'));",
+                      "pm.environment.set('token_employer', json.token);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{employer_email}}\",\n  \"password\": \"{{employer_password}}\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/auth/login"
+              }
+            },
+            {
+              "name": "Login Applicant (saves token_applicant)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has token', () => pm.expect(json.token).to.be.a('string'));",
+                      "pm.test('Role applicant', () => pm.expect(json.data.role).to.eql('applicant'));",
+                      "pm.environment.set('token_applicant', json.token);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{applicant_email}}\",\n  \"password\": \"{{applicant_password}}\"\n}"
+                },
+                "url": "{{base_url}}{{api_prefix}}/auth/login"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Session",
+          "item": [
+            {
+              "name": "Me (Employer)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has data.id', () => pm.expect(json.data.id).to.be.a('number'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_employer}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}{{api_prefix}}/auth/me"
+              }
+            },
+            {
+              "name": "Me (Applicant)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.test('Has data.id', () => pm.expect(json.data.id).to.be.a('number'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_applicant}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}{{api_prefix}}/auth/me"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
