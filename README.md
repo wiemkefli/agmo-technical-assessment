@@ -129,7 +129,7 @@ macOS/Linux:
 ```bash
 cd frontend
 npm install
-printf "NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api\n" > .env.local
+cp .env.example .env.local
 npm run dev
 ```
 
@@ -138,7 +138,7 @@ Windows (PowerShell):
 ```powershell
 cd frontend
 npm install
-"NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api" | Out-File -Encoding ascii .env.local
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
@@ -200,7 +200,7 @@ Notes:
 ```bash
 cd frontend
 npm install
-printf "NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api\n" > .env.local
+cp .env.example .env.local
 npm run dev
 ```
 
@@ -278,15 +278,7 @@ Auth/supporting tables also exist (Laravel defaults + Sanctum):
   - Employers can only manage jobs they own (`backend/app/Policies/JobPolicy.php`).
   - Employers can only update/view resumes for applications belonging to their jobs (`backend/app/Policies/ApplicationPolicy.php`).
 
-## 11) API Endpoints
-
-Moved to `postman/README.md`.
-
-## 12) Postman Collection
-
-Moved to `postman/README.md`.
-
-## 13) Testing
+## 11) Testing
 
 ### Backend
 
@@ -305,50 +297,3 @@ No automated test suite is included. Linting is available:
 cd frontend
 npm run lint
 ```
-
-## 14) Gaps vs Assessment Requirements
-
-Checklist mapped to `Full Stack Engineer Technical Assessment.md`.
-
-### Backend requirements checklist
-
-- ✅ Laravel REST API returning JSON responses (resources + paginator meta)
-- ✅ Register/login using email + password
-- ✅ Sanctum token authentication (bearer tokens)
-- ✅ Roles (`employer`, `applicant`) + middleware protection
-- ✅ Jobs CRUD for employers (own jobs only)
-- ✅ Applicants can browse all published jobs
-- ✅ Job fields: `title`, `description`, `location`, `salary_range` (via `salary_min`/`salary_max` + computed `salary_range`), `is_remote`, `status`
-- ✅ Job applications: applicant applies with a message
-- ✅ Employer can view applicants for their jobs
-- ✅ Validation + error handling (401/403/404/422)
-- ⚠️ REST surface includes `GET /api/applications` as an alias of applied-jobs (commented deprecated)
-
-### Frontend requirements checklist
-
-- ✅ Login/register pages (register includes client-side validation for name/password confirmation)
-- ✅ Role-based dashboard behavior (redirects based on role)
-- ✅ Applicant: browse jobs, view details, apply
-- ✅ Employer: CRUD jobs, view applicants, update application status
-- ✅ State management (Zustand auth store persisted to `localStorage`)
-- ✅ API integration (shared `fetch` wrapper + client modules)
-- ✅ UI framework (Tailwind CSS)
-
-### Deliverables checklist
-
-- ✅ `backend/` (Laravel project)
-- ✅ `frontend/` (Next.js project)
-- ✅ Postman collection included under `postman/`
-
-### Bonus checklist
-
-- ❌ Email notifications (no mail/notification dispatch implemented)
-- ✅ Pagination (jobs list, employer jobs, saved jobs, applied jobs)
-- ✅ Resume upload (profile resume + application resume; employer download)
-- ✅ Backend tests (feature tests)
-
-## 15) Notes
-
-- Public job endpoints only expose `published` jobs; employers manage drafts via `/api/employer/*`.
-- If you change the frontend origin from `http://localhost:3000`, update `backend/config/cors.php`.
-- `salary_range` is an API convenience field; the DB stores salaries as `salary_min` and `salary_max`.

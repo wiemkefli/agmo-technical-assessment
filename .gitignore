@@ -1,1 +1,9 @@
 node_modules
+
+# Local environment files
+backend/.env
+frontend/.env.local
+
+# App-specific dependency folders
+backend/node_modules
+frontend/vendor
