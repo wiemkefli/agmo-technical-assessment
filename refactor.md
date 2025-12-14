@@ -53,8 +53,6 @@ Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Ne
 
 ### Frontend
 
-- **"Fat" jobs listing client component remains**
-  - `frontend/src/app/jobs/JobsClient.tsx` still mixes concerns: filter UI/draft state, URL syncing, pagination wiring, rendering, modal state, and applicant interactions.
 - **Contract drift risk**
   - `frontend/src/lib/types.ts` is hand-maintained and can drift from backend `JsonResource` outputs over time.
 
