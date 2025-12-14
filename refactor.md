@@ -14,15 +14,16 @@ Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Ne
 - **Requests (validation/normalization)**: `backend/app/Http/Requests/*`
   - Pagination: `PerPageRequest`
   - Job listing/search: `JobIndexRequest`, `EmployerJobIndexRequest`
+    - Supports `exclude_applied` for `/api/jobs` to paginate over unapplied jobs for authenticated applicants.
   - Job write: `JobStoreRequest`, `JobUpdateRequest` (+ `Concerns/ParsesSalaryRange`)
 - **Services (domain/use-case orchestration)**: `backend/app/Services/*`
-  - Jobs: `JobService` (CRUD + listing/search) + `JobSearchService` (filter mechanics)
+  - Jobs: `JobService` (CRUD + listing/search; supports excluding applied jobs) + `JobSearchService` (filter mechanics)
   - Applications: `ApplicationService`
   - Files: `ResumeService` (resume store/copy/delete/download helpers)
   - Saved jobs: `SavedJobService`
 - **Resources (API contract / response shaping)**: `backend/app/Http/Resources/*` (e.g. `JobResource`, `JobCollection`, `ApplicationResource`, `ApplicationCollection`)
 - **Authorization**: `backend/app/Policies/*` (e.g. `JobPolicy`, `ApplicationPolicy`) registered in `backend/app/Providers/AuthServiceProvider.php`
-- **Tests**: `backend/tests/Feature/*`
+- **Tests**: `backend/tests/Feature/*` (includes `ExcludeAppliedJobsTest`)
 
 ### Frontend (`frontend/`)
 
@@ -31,10 +32,11 @@ Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Ne
   - Applicant: `frontend/src/app/applied-jobs/page.tsx`, `frontend/src/app/saved-jobs/page.tsx`, `frontend/src/app/profile/page.tsx`
   - Employer: `frontend/src/app/employer/jobs/page.tsx`, `frontend/src/app/employer/jobs/[id]/edit/page.tsx`, `frontend/src/app/employer/jobs/[id]/applications/page.tsx`
 - **Components**: `frontend/src/components/*` (modals, forms, tables, cards)
-- **State**: `frontend/src/store/auth.ts` (Zustand auth/session)
+- **State**: `frontend/src/store/auth.ts` (Zustand auth/session; refreshes via `/auth/me` after login/register to load self-only fields like resume metadata)
 - **API layer**:
   - Base: `frontend/src/lib/api.ts`
   - Domain clients: `frontend/src/lib/clients/*` (jobs/applied/saved/profile/auth/employer*)
+    - Jobs listing supports `exclude_applied=1` to keep pagination full when hiding applied jobs.
   - Query helpers: `frontend/src/lib/clients/query.ts`
 - **Hooks**:
   - Async effects: `frontend/src/lib/hooks/useAsyncEffect.ts`
