@@ -5,5 +5,5 @@ backend/.env
 frontend/.env.local
 
 # App-specific dependency folders
-backend/node_modules
-frontend/vendor
+backend/vendor
+frontend/node_modules
