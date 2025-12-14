@@ -55,7 +55,7 @@ export function JobCard({
     );
   })();
 
-  const company = job.employer?.company ?? job.employer?.name ?? null;
+  const company = job.employer?.company ?? null;
   const metaLine = (() => {
     const location = job.location ?? null;
     const remote = job.is_remote ? "Remote" : null;

@@ -1,24 +1,24 @@
 # Refactor Assessment (Current State)
 
-Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Next.js App Router + Zustand). This report summarizes current structure, remaining modularity smells, high-level refactor opportunities, and what to clarify before more changes.
+Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Next.js App Router + Zustand). This report summarizes current structure, remaining modularity smells, high-level refactor opportunities, and questions to clarify before additional changes.
 
 ## 1) Current Structure Summary
 
 ### Backend (`backend/`)
 
-- **Routes**: `backend/routes/api.php` (public + `auth:sanctum` groups; role-gated applicant/employer groups)
+- **Routes**: `backend/routes/api.php` (public + authenticated groups; `role:applicant` and `role:employer` route groups)
 - **Controllers (HTTP orchestration)**: `backend/app/Http/Controllers/*`
-  - Public: `JobController` (list/show)
+  - Public: `JobController` (jobs list/show)
   - Applicant: `ApplicationController` (apply, applied list/ids), `SavedJobController` (saved list/ids, save/unsave), `ProfileController` (profile + resume)
   - Employer: `EmployerJobController` (job CRUD, list, applications), `EmployerApplicationController` (application update + resume download)
 - **Requests (validation/normalization)**: `backend/app/Http/Requests/*`
   - Pagination: `PerPageRequest`
-  - Job listing: `JobIndexRequest`, `EmployerJobIndexRequest`
+  - Job listing/search: `JobIndexRequest`, `EmployerJobIndexRequest`
   - Job write: `JobStoreRequest`, `JobUpdateRequest` (+ `Concerns/ParsesSalaryRange`)
 - **Services (domain/use-case orchestration)**: `backend/app/Services/*`
   - Jobs: `JobService` (CRUD + listing/search) + `JobSearchService` (filter mechanics)
   - Applications: `ApplicationService`
-  - Files: `ResumeService` (store/copy/delete/download helpers)
+  - Files: `ResumeService` (resume store/copy/delete/download helpers)
   - Saved jobs: `SavedJobService`
 - **Resources (API contract / response shaping)**: `backend/app/Http/Resources/*` (e.g. `JobResource`, `JobCollection`, `ApplicationResource`, `ApplicationCollection`)
 - **Authorization**: `backend/app/Policies/*` (e.g. `JobPolicy`, `ApplicationPolicy`) registered in `backend/app/Providers/AuthServiceProvider.php`
@@ -31,7 +31,7 @@ Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Ne
   - Applicant: `frontend/src/app/applied-jobs/page.tsx`, `frontend/src/app/saved-jobs/page.tsx`, `frontend/src/app/profile/page.tsx`
   - Employer: `frontend/src/app/employer/jobs/page.tsx`, `frontend/src/app/employer/jobs/[id]/edit/page.tsx`, `frontend/src/app/employer/jobs/[id]/applications/page.tsx`
 - **Components**: `frontend/src/components/*` (modals, forms, tables, cards)
-- **State**: `frontend/src/store/auth.ts` (Zustand)
+- **State**: `frontend/src/store/auth.ts` (Zustand auth/session)
 - **API layer**:
   - Base: `frontend/src/lib/api.ts`
   - Domain clients: `frontend/src/lib/clients/*` (jobs/applied/saved/profile/auth/employer*)
@@ -40,32 +40,37 @@ Scope: full repository, focusing on `backend/` (Laravel API) and `frontend/` (Ne
   - Async effects: `frontend/src/lib/hooks/useAsyncEffect.ts`
   - Paginated lists: `frontend/src/lib/hooks/usePaginatedResource.ts`
 - **Feature modules**:
-  - Jobs: `frontend/src/features/jobs/*` (`filters.ts`, `useJobsListing.ts`, `useApplicantJobState.ts`, `useJobsUrlState.ts`)
+  - Jobs feature: `frontend/src/features/jobs/*`
+    - State/query: `useJobsUrlState.ts`, `filters.ts`, `useJobsListing.ts`, `useApplicantJobState.ts`
+    - UI slices: `JobsFiltersCard.tsx`, `JobsListSection.tsx`, `SavedJobsSidebar.tsx`
 - **Shared utilities**:
-  - `frontend/src/lib/resume.ts`, `frontend/src/lib/apiBlob.ts`, `frontend/src/lib/applicationStatus.ts`
+  - Resume validation: `frontend/src/lib/resume.ts`
+  - Authenticated blob helpers: `frontend/src/lib/apiBlob.ts`
+  - Status constants: `frontend/src/lib/applicationStatus.ts`
 
 ## 2) Modularity Issues & Code Smells
 
 ### Backend
 
 - **Layered structure more than “feature modules”**
-  - Current separation (Controllers/Requests/Services/Resources/Policies) is clean, but it’s still technical-layer oriented; if the app grows, feature folders per domain (Jobs/Applications/Profile/Auth) would make boundaries more explicit.
+  - The separation (Controllers/Requests/Services/Resources/Policies) is clean and idiomatic Laravel, but as domains grow, feature folders per domain (Jobs/Applications/Profile/Auth) can make boundaries clearer.
 
 ### Frontend
 
 - **Contract drift risk**
-  - `frontend/src/lib/types.ts` is hand-maintained and can drift from backend `JsonResource` outputs over time.
+  - `frontend/src/lib/types.ts` is hand-maintained and may drift from backend `JsonResource` outputs over time (especially nested shapes).
 
 ## 3) Refactor Opportunities (High-Level)
 
-### Opportunity E - Cross-cutting: Contract as source of truth (OpenAPI/types generation)
+### Opportunity E — Cross-cutting: Contract as source of truth (OpenAPI/types generation)
 
-- **Risk/Effort**: **Risk: Low-Medium / Effort: Medium-High**
-- **What could break**: mostly compile-time; runtime issues only if the schema/types don't match production behavior.
+- **What**: Add an API schema (OpenAPI or equivalent) and generate TS types (and optionally a typed client) to reduce drift between backend resources and frontend types.
+- **Pros**: Safer refactors; compile-time alignment; easier onboarding; less manual shape chasing.
+- **Cons**: Upfront setup; requires discipline to keep schema in sync with actual responses.
+- **Risk/Effort**: **Risk: Low–Medium / Effort: Medium–High**
+- **What could break**: mostly compile-time; runtime issues only if schema/types don’t match real API behavior.
 
 ## 4) Clarifying Questions (Before Further Refactor)
 
-1. Jobs listing: should the **URL be the source of truth** for `page/per_page/filters`, or do you prefer local state with URL syncing?
-2. Jobs filters UX: keep **draft filters + “Search” apply** (current direction) or switch to “instant apply”?
-3. Is the API contract **locked**, or can response shapes evolve as long as the frontend stays compatible?
-4. Do you want to pursue schema/types generation now (Opportunity E), or keep `frontend/src/lib/types.ts` hand-maintained for this assessment?
+1. Is the API contract **locked**, or can response shapes evolve as long as the frontend stays compatible?
+2. Do you want to pursue schema/types generation now (Opportunity E), or keep `frontend/src/lib/types.ts` hand-maintained for this assessment?

@@ -107,9 +107,9 @@ export function JobModal({
             {job?.employer && (
               <p
                 className="mt-1 text-sm font-medium text-zinc-800 truncate"
-                title={job.employer.company ?? job.employer.name}
+                title={job.employer.company ?? ""}
               >
-                {job.employer.company ?? job.employer.name}
+                {job.employer.company ?? ""}
               </p>
             )}
             {job && (

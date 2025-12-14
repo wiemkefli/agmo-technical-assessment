@@ -19,6 +19,12 @@ export interface User {
   updated_at: string;
 }
 
+export interface PublicEmployer {
+  id: number;
+  company: string | null;
+  website: string | null;
+}
+
 export type JobStatus = "draft" | "published";
 
 export interface Job {
@@ -29,12 +35,13 @@ export interface Job {
   location: string | null;
   salary_min: number | null;
   salary_max: number | null;
+  salary_range?: string | null;
   is_remote: boolean;
   status: JobStatus;
   published_at: string | null;
   created_at: string;
   updated_at: string;
-  employer?: User;
+  employer?: PublicEmployer;
 }
 
 export interface Application {
