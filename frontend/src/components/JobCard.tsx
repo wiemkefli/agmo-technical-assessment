@@ -87,12 +87,12 @@ export function JobCard({
 
   const rootPadding = isCompact ? "p-4" : "p-5";
   const heightClass = isCompact
-    ? "h-[9rem]"
+    ? "h-auto sm:h-[9rem]"
     : isSaved
-      ? "h-[16rem]"
+      ? "h-auto sm:h-[16rem]"
       : footer
-        ? "h-[15rem]"
-        : "h-[14rem]";
+        ? "h-auto sm:h-[15rem]"
+        : "h-auto sm:h-[14rem]";
 
   return (
     <div

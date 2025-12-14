@@ -6,18 +6,22 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, role, logout } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const homeHref =
     user && role === "employer" ? "/employer/jobs" : "/jobs";
+
+  useLockBodyScroll(mobileNavOpen);
 
   const handleLogout = async () => {
     setSigningOut(true);
@@ -47,6 +51,11 @@ export function Navbar() {
       window.removeEventListener("mousedown", onMouseDown);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   const avatarLetter = useMemo(() => {
     const base = user?.name?.trim() || user?.email?.trim() || "?";
@@ -138,17 +147,34 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-zinc-700 ring-1 ring-zinc-200 transition hover:bg-zinc-50 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 md:hidden"
+            aria-label="Open menu"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
           {!user ? (
             <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="rounded-md px-2 py-1 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                className="rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="rounded-full bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
+                className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
               >
                 Register
               </Link>
@@ -177,7 +203,7 @@ export function Navbar() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                <div className="absolute right-0 mt-2 w-56 max-h-[70vh] overflow-y-auto rounded-xl border border-zinc-200 bg-white shadow-lg">
                   <div className="px-3 py-2">
                     <div className="text-sm font-semibold text-zinc-900 line-clamp-1">
                       {user.name}
@@ -257,6 +283,152 @@ export function Navbar() {
         </div>
       </div>
       </header>
+
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+          onClick={() => setMobileNavOpen(false)}
+        >
+          <div
+            className="absolute inset-x-0 top-0 max-h-[85vh] overflow-y-auto rounded-b-3xl border-b border-zinc-200 bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 px-4 py-4">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-zinc-900">Menu</div>
+                {user && (
+                  <div className="mt-1 text-xs text-zinc-600 line-clamp-1">
+                    {user.email}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-zinc-600 ring-1 ring-zinc-200 transition hover:bg-zinc-50 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30"
+                aria-label="Close menu"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" d="M6 6l8 8M14 6l-8 8" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="h-px bg-zinc-100" />
+
+            <div className="px-2 py-2">
+              <Link
+                href="/jobs"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+              >
+                <span>Job search</span>
+                <span className="text-zinc-400">›</span>
+              </Link>
+
+              {user && role === "applicant" && (
+                <>
+                  <Link
+                    href="/saved-jobs"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                  >
+                    <span>Saved jobs</span>
+                    <span className="text-zinc-400">›</span>
+                  </Link>
+                  <Link
+                    href="/applied-jobs"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                  >
+                    <span>Applied jobs</span>
+                    <span className="text-zinc-400">›</span>
+                  </Link>
+                </>
+              )}
+
+              {user && role === "employer" && (
+                <>
+                  <Link
+                    href="/employer/jobs"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                  >
+                    <span>My jobs</span>
+                    <span className="text-zinc-400">›</span>
+                  </Link>
+                  <Link
+                    href="/employer/jobs/new"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                  >
+                    <span>Post a job</span>
+                    <span className="text-zinc-400">›</span>
+                  </Link>
+                </>
+              )}
+
+              {user && (
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                >
+                  <span>Profile</span>
+                  <span className="text-zinc-400">›</span>
+                </Link>
+              )}
+
+              {!user && (
+                <div className="mt-2 grid grid-cols-1 gap-2 px-2 pb-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-800 shadow-sm"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {user && (
+              <>
+                <div className="h-px bg-zinc-100" />
+                <div className="p-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      setConfirmLogoutOpen(true);
+                    }}
+                    className="w-full rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 ring-1 ring-rose-200"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={confirmLogoutOpen}

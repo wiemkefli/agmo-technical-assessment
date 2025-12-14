@@ -64,7 +64,7 @@ export default function AppliedJobsPage() {
         )}
 
         {!loading && !error && appsWithJobs.length === 0 && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-700 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700 shadow-sm sm:p-6">
             You haven&apos;t applied to any jobs yet.
           </div>
         )}
@@ -100,4 +100,3 @@ export default function AppliedJobsPage() {
     </Protected>
   );
 }
-

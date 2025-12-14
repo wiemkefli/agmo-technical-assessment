@@ -59,7 +59,7 @@ export default function EmployerJobEditPage() {
         </div>
         {loading && <p className="text-sm text-zinc-600">Loading…</p>}
         {job && (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <JobForm initial={job} onSubmit={handleUpdate} submitLabel="Update" />
           </div>
         )}

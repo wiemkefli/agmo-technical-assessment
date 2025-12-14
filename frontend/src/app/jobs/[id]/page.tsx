@@ -93,11 +93,11 @@ export default function JobDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 shadow-sm sm:p-6">
         <h1 className="text-3xl font-bold tracking-tight">{job.title}</h1>
         <p className="mt-1 text-sm text-zinc-600">
           {job.location ?? "Remote / Flexible"}
-          {job.is_remote ? " • Remote" : ""}
+          {job.is_remote ? " - Remote" : ""}
         </p>
         {formatSalary(job) && (
           <p className="mt-1 text-sm text-zinc-700">{formatSalary(job)}</p>
@@ -108,7 +108,7 @@ export default function JobDetailPage() {
       </div>
 
       {role === "applicant" && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 shadow-sm sm:p-6">
           {alreadyApplied ? (
             <div className="rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
               You have already applied to this job.
@@ -140,3 +140,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+

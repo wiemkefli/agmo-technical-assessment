@@ -189,7 +189,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
           {user?.role === "employer" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -199,6 +199,7 @@ export default function ProfilePage() {
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Required for employers"
+                  autoComplete="organization"
                   required
                 />
               </div>
@@ -211,10 +212,13 @@ export default function ProfilePage() {
               <div className="sm:col-span-2">
                 <label className="text-sm font-medium text-zinc-800">Website</label>
                 <input
+                  type="url"
+                  inputMode="url"
                   className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   placeholder="https://company.com (optional)"
+                  autoComplete="url"
                 />
               </div>
             </div>
@@ -240,10 +244,13 @@ export default function ProfilePage() {
               <div>
                 <label className="text-sm font-medium text-zinc-800">Phone</label>
                 <input
+                  type="tel"
+                  inputMode="tel"
                   className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+60..."
+                  autoComplete="tel"
                 />
               </div>
               <div>
@@ -253,18 +260,19 @@ export default function ProfilePage() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="City (optional)"
+                  autoComplete="address-level2"
                 />
               </div>
             </div>
           )}
 
           {user?.role === "applicant" && (
-            <div className="mt-5 flex items-center gap-2">
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
                 type="button"
                 onClick={() => save()}
                 disabled={saving || !token}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 disabled:opacity-50"
+                className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 disabled:opacity-50 sm:w-auto"
               >
                 {saving ? "Saving..." : "Save changes"}
               </button>
@@ -369,12 +377,12 @@ export default function ProfilePage() {
           )}
 
           {user?.role !== "applicant" && (
-            <div className="mt-5 flex items-center gap-2">
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
                 type="button"
                 onClick={() => save()}
                 disabled={saving || !token}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 disabled:opacity-50"
+                className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 disabled:opacity-50 sm:w-auto"
               >
                 {saving ? "Saving..." : "Save changes"}
               </button>

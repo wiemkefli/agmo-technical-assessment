@@ -99,7 +99,7 @@ export function JobModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -118,17 +118,26 @@ export function JobModal({
             {job && (
               <p className="mt-1 text-sm text-zinc-600 line-clamp-2 break-words [overflow-wrap:anywhere]">
                 {job.location ?? "Remote / Flexible"}
-                {job.is_remote ? " • Remote" : ""}
-                {salary ? ` • ${salary}` : ""}
+                {job.is_remote ? " - Remote" : ""}
+                {salary ? ` - ${salary}` : ""}
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+            className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
             aria-label="Close"
           >
-            x
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" d="M6 6l8 8M14 6l-8 8" />
+            </svg>
           </button>
         </div>
 
@@ -182,3 +191,6 @@ export function JobModal({
     </div>
   );
 }
+
+
+

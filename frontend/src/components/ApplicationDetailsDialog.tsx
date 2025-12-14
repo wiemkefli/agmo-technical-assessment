@@ -53,7 +53,7 @@ export function ApplicationDetailsDialog({
         className="w-full max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-4 py-4 sm:px-6">
           <div className="min-w-0">
             <h3 className="text-lg font-semibold text-zinc-900 truncate" title={applicantName}>
               {applicantName}
@@ -64,14 +64,23 @@ export function ApplicationDetailsDialog({
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
             aria-label="Close"
           >
-            x
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" d="M6 6l8 8M14 6l-8 8" />
+            </svg>
           </button>
         </div>
 
-        <div className="space-y-4 px-6 py-5">
+        <div className="space-y-4 px-4 py-5 sm:px-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <div className="text-xs font-medium text-zinc-500">Status</div>
@@ -116,7 +125,7 @@ export function ApplicationDetailsDialog({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-white px-6 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-white px-4 py-4 sm:px-6">
           <button
             type="button"
             onClick={onClose}

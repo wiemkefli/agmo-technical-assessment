@@ -39,7 +39,6 @@ export default function EmployerJobsPage() {
   }, [token]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     const cleanup = reloadJobs();
     return cleanup;
   }, [reloadJobs]);
@@ -98,7 +97,7 @@ export default function EmployerJobsPage() {
                         e.stopPropagation();
                         setEditJobId(job.id);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 sm:py-1.5 sm:text-xs"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -118,7 +117,7 @@ export default function EmployerJobsPage() {
                         e.stopPropagation();
                         setApplicationsJobId(job.id);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-200 transition hover:bg-indigo-100"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-200 transition hover:bg-indigo-100 sm:py-1.5 sm:text-xs"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -140,7 +139,7 @@ export default function EmployerJobsPage() {
                         e.stopPropagation();
                         setDeleteJobId(job.id);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:bg-rose-100 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:bg-rose-100 disabled:opacity-50 sm:py-1.5 sm:text-xs"
                       disabled={deleting}
                     >
                       <svg

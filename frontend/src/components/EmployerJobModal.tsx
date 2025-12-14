@@ -20,22 +20,29 @@ export function EmployerJobModal({
 }) {
   const { token } = useAuthStore();
   const [job, setJob] = useState<Job | null>(null);
-  const [loading, setLoading] = useState(mode === "edit");
-  const [error, setError] = useState<string | null>(null);
+  const [loadedJobId, setLoadedJobId] = useState<number | null>(null);
+  const [error, setError] = useState<{ jobId: number; message: string } | null>(
+    null,
+  );
 
   useLockBodyScroll(true);
 
   useEffect(() => {
     if (mode !== "edit" || !jobId || !token) return;
     let alive = true;
-    setLoading(true);
-    setError(null);
     apiRequest<{ data: Job }>(`employer/jobs/${jobId}`, { token })
-      .then((res) => alive && setJob(res.data))
-      .catch((e: unknown) =>
-        alive && setError(getErrorMessage(e, "Failed to load job")),
-      )
-      .finally(() => alive && setLoading(false));
+      .then((res) => {
+        if (!alive) return;
+        setJob(res.data);
+        setLoadedJobId(jobId);
+        setError(null);
+      })
+      .catch((e: unknown) => {
+        if (!alive) return;
+        setJob(null);
+        setLoadedJobId(jobId);
+        setError({ jobId, message: getErrorMessage(e, "Failed to load job") });
+      });
     return () => {
       alive = false;
     };
@@ -70,15 +77,20 @@ export function EmployerJobModal({
     onClose();
   };
 
+  const loading = mode === "edit" && !!jobId && !!token && loadedJobId !== jobId;
+  const errorMessage =
+    mode === "edit" && !!jobId && error?.jobId === jobId ? error.message : null;
+  const jobToEdit = mode === "edit" && loadedJobId === jobId ? job : null;
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        onClick={onClose}
+      >
+      <div
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -90,18 +102,27 @@ export function EmployerJobModal({
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={onClose}
-              className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
               aria-label="Close"
             >
-              x
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-5 w-5"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" d="M6 6l8 8M14 6l-8 8" />
+              </svg>
             </button>
           </div>
         </div>
 
         {loading && <p className="mt-4 text-sm text-zinc-600">Loading.</p>}
-        {error && (
+        {errorMessage && (
           <div className="mt-4 max-h-40 overflow-y-auto rounded-md border border-red-200 bg-red-50 p-3 pr-1 text-sm text-red-700 break-words [overflow-wrap:anywhere]">
-            {error}
+            {errorMessage}
           </div>
         )}
 
@@ -111,11 +132,11 @@ export function EmployerJobModal({
           </div>
         )}
 
-        {!loading && mode === "edit" && job && (
+        {!loading && mode === "edit" && jobToEdit && (
           <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4">
             <JobForm
-              key={job.id}
-              initial={job}
+              key={jobToEdit.id}
+              initial={jobToEdit}
               onSubmit={handleSubmit}
               submitLabel="Update"
             />

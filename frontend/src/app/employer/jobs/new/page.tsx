@@ -25,7 +25,7 @@ export default function EmployerJobNewPage() {
     <Protected roles={["employer"]}>
       <div className="space-y-5">
         <h1 className="text-3xl font-bold tracking-tight">Create Job</h1>
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
           <JobForm onSubmit={handleCreate} submitLabel="Create" />
         </div>
       </div>
