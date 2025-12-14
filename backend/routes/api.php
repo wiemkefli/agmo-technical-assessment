@@ -6,7 +6,6 @@ use App\Http\Controllers\EmployerApplicationController;
 use App\Http\Controllers\EmployerJobController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SavedJobController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,7 +38,6 @@ Route::middleware(['auth:sanctum', 'role:applicant'])->group(function () {
     Route::get('applications', [ApplicationController::class, 'index']);
     Route::post('jobs/{job}/apply', [ApplicationController::class, 'store']);
 
-    Route::get('recommended-jobs', [RecommendationController::class, 'index']);
     Route::get('saved-jobs', [SavedJobController::class, 'index']);
     Route::get('saved-jobs/ids', [SavedJobController::class, 'ids']);
     Route::post('jobs/{job}/save', [SavedJobController::class, 'store']);
