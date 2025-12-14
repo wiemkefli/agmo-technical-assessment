@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ApplicationCollection;
 use App\Http\Resources\ApplicationResource;
 use App\Http\Requests\ApplicationStoreRequest;
 use App\Models\Application;
@@ -17,13 +18,28 @@ class ApplicationController extends Controller
 
     public function index(Request $request)
     {
+        $perPage = (int) $request->query('per_page', 10);
+        $perPage = max(1, min($perPage, 50));
+
         $applications = Application::query()
             ->where('applicant_id', $request->user()->id)
             ->with(['job.employer.employerProfile'])
             ->latest()
-            ->get();
+            ->paginate($perPage);
 
-        return ApplicationResource::collection($applications);
+        return new ApplicationCollection($applications);
+    }
+
+    public function ids(Request $request)
+    {
+        $rows = Application::query()
+            ->where('applicant_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->get(['job_id', 'status']);
+
+        return response()->json([
+            'data' => $rows,
+        ]);
     }
 
     public function store(ApplicationStoreRequest $request, Job $job)

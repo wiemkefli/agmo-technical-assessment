@@ -34,6 +34,7 @@ Route::middleware(['auth:sanctum', 'role:applicant'])->group(function () {
     Route::delete('profile/resume', [ProfileController::class, 'deleteResume']);
 
     Route::get('applied-jobs', [ApplicationController::class, 'index']);
+    Route::get('applied-jobs/ids', [ApplicationController::class, 'ids']);
     // Backwards-compatible alias (deprecated)
     Route::get('applications', [ApplicationController::class, 'index']);
     Route::post('jobs/{job}/apply', [ApplicationController::class, 'store']);

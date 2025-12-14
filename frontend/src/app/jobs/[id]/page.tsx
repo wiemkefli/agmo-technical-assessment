@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { APIError, apiRequest, getErrorMessage } from "@/lib/api";
-import type { Application, Job } from "@/lib/types";
+import type { AppliedJobStatus, Job } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { formatSalary } from "@/lib/salary";
@@ -34,7 +34,7 @@ export default function JobDetailPage() {
   useEffect(() => {
     if (!token || role !== "applicant") return;
     let alive = true;
-    apiRequest<{ data: Application[] }>("applied-jobs", { token })
+    apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token })
       .then((res) => {
         if (!alive) return;
         setAlreadyApplied(res.data.some((a) => String(a.job_id) === String(id)));

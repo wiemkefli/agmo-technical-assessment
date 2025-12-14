@@ -9,6 +9,7 @@ import { JobCard } from "@/components/JobCard";
 import { EmployerJobModal } from "@/components/EmployerJobModal";
 import { EmployerApplicationsModal } from "@/components/EmployerApplicationsModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { PaginationControls } from "@/components/PaginationControls";
 
 export default function EmployerJobsPage() {
   const { token } = useAuthStore();
@@ -21,13 +22,15 @@ export default function EmployerJobsPage() {
   );
   const [deleteJobId, setDeleteJobId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   const reloadJobs = useCallback(() => {
     if (!token) return;
     let alive = true;
     setLoading(true);
     setError(null);
-    apiPaginated<Job>("employer/jobs", { token })
+    apiPaginated<Job>(`employer/jobs?page=${page}&per_page=${perPage}`, { token })
       .then((res) => alive && setData(res))
       .catch((e: unknown) =>
         alive && setError((e as Error)?.message ?? "Failed to load jobs"),
@@ -36,7 +39,7 @@ export default function EmployerJobsPage() {
     return () => {
       alive = false;
     };
-  }, [token]);
+  }, [page, token]);
 
   useEffect(() => {
     const cleanup = reloadJobs();
@@ -63,13 +66,20 @@ export default function EmployerJobsPage() {
         token,
       });
       setDeleteJobId(null);
-      reloadJobs();
+      if (data && data.data.length === 1 && page > 1) {
+        setPage((p) => Math.max(1, p - 1));
+      } else {
+        reloadJobs();
+      }
     } catch (e: unknown) {
       setError(getErrorMessage(e, "Failed to delete job"));
     } finally {
       setDeleting(false);
     }
-  }, [token, deleteJobId, reloadJobs]);
+  }, [token, deleteJobId, reloadJobs, data, page]);
+
+  const currentPage = data?.meta.current_page ?? page;
+  const lastPage = data?.meta.last_page ?? currentPage;
 
   return (
     <Protected roles={["employer"]}>
@@ -82,86 +92,97 @@ export default function EmployerJobsPage() {
           </div>
         )}
         {data && (
-          <div className="grid grid-cols-1 gap-4">
-            {data.data.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onClick={() => setEditJobId(job.id)}
-                footer={
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditJobId(job.id);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 sm:py-1.5 sm:text-xs"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-4 w-4"
+          <>
+            <div className="grid grid-cols-1 gap-4">
+              {data.data.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onClick={() => setEditJobId(job.id)}
+                  footer={
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditJobId(job.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 sm:py-1.5 sm:text-xs"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="h-4 w-4"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setApplicationsJobId(job.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-200 transition hover:bg-indigo-100 sm:py-1.5 sm:text-xs"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="h-4 w-4"
+                          >
+                            <path d="M16 11a4 4 0 1 0-8 0" />
+                            <path d="M12 12a5 5 0 0 0-9 3" />
+                            <path d="M21 15a5 5 0 0 0-6-3" />
+                          </svg>
+                          Applications
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteJobId(job.id);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:bg-rose-100 disabled:opacity-50 sm:py-1.5 sm:text-xs"
+                        disabled={deleting}
                       >
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                      </svg>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setApplicationsJobId(job.id);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-200 transition hover:bg-indigo-100 sm:py-1.5 sm:text-xs"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-4 w-4"
-                      >
-                        <path d="M16 11a4 4 0 1 0-8 0" />
-                        <path d="M12 12a5 5 0 0 0-9 3" />
-                        <path d="M21 15a5 5 0 0 0-6-3" />
-                      </svg>
-                      Applications
-                    </button>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className="h-4 w-4"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="M7 6l1 14h8l1-14" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                        </svg>
+                        Delete
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteJobId(job.id);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:bg-rose-100 disabled:opacity-50 sm:py-1.5 sm:text-xs"
-                      disabled={deleting}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-4 w-4"
-                      >
-                        <path d="M3 6h18" />
-                        <path d="M8 6V4h8v2" />
-                        <path d="M7 6l1 14h8l1-14" />
-                        <path d="M10 11v6" />
-                        <path d="M14 11v6" />
-                      </svg>
-                      Delete
-                    </button>
-                  </div>
-                }
-              />
-            ))}
-          </div>
+                  }
+                />
+              ))}
+            </div>
+
+            <PaginationControls
+              className="pt-2"
+              currentPage={currentPage}
+              lastPage={lastPage}
+              disabled={loading}
+              onPrev={() => setPage((p) => Math.max(1, p - 1))}
+              onNext={() => setPage((p) => Math.min(lastPage, p + 1))}
+            />
+          </>
         )}
       </div>
 

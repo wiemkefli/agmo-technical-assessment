@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Protected } from "@/components/Protected";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
+import { PaginationControls } from "@/components/PaginationControls";
 import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
-import type { Application, Job, PaginatedResponse } from "@/lib/types";
+import type { AppliedJobStatus, Job, PaginatedResponse } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 
 export default function SavedJobsPage() {
@@ -25,8 +26,6 @@ export default function SavedJobsPage() {
 
   const currentPage = data?.meta.current_page ?? page;
   const lastPage = data?.meta.last_page ?? currentPage;
-  const prevDisabled = loading || !data || currentPage <= 1;
-  const nextDisabled = loading || !data || currentPage >= lastPage;
 
   const reloadSavedJobs = useCallback(() => {
     if (!token) return;
@@ -55,7 +54,7 @@ export default function SavedJobsPage() {
   useEffect(() => {
     if (!token) return;
     let alive = true;
-    apiRequest<{ data: Application[] }>("applied-jobs", { token })
+    apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token })
       .then((res) => {
         if (!alive) return;
         setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
@@ -168,27 +167,14 @@ export default function SavedJobsPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={prevDisabled}
-                className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <div className="text-sm text-zinc-600">
-                Page {currentPage} of {lastPage}
-              </div>
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-                disabled={nextDisabled}
-                className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
+            <PaginationControls
+              className="pt-2"
+              currentPage={currentPage}
+              lastPage={lastPage}
+              disabled={loading}
+              onPrev={() => setPage((p) => Math.max(1, p - 1))}
+              onNext={() => setPage((p) => Math.min(lastPage, p + 1))}
+            />
           </>
         )}
       </div>

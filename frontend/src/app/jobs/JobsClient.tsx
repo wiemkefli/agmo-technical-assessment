@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiPaginated, apiRequest, getErrorMessage } from "@/lib/api";
-import type { Application, Job, PaginatedResponse } from "@/lib/types";
+import type { AppliedJobStatus, Job, PaginatedResponse } from "@/lib/types";
 import { JobCard } from "@/components/JobCard";
 import { JobModal } from "@/components/JobModal";
+import { PaginationControls } from "@/components/PaginationControls";
 import { useAuthStore } from "@/store/auth";
 
 type WorkArrangement = "any" | "remote" | "onsite";
@@ -86,8 +87,6 @@ export function JobsClient() {
     String(data?.meta.last_page ?? currentPage),
     currentPage,
   );
-  const prevDisabled = loading || !data || currentPage <= 1;
-  const nextDisabled = loading || !data || currentPage >= lastPage;
 
   useEffect(() => {
     const nextPage = toPositiveInt(searchParams.get("page"), 1);
@@ -162,7 +161,7 @@ export function JobsClient() {
   useEffect(() => {
     if (!token || role !== "applicant") return;
     let alive = true;
-    apiRequest<{ data: Application[] }>("applied-jobs", { token })
+    apiRequest<{ data: AppliedJobStatus[] }>("applied-jobs/ids", { token })
       .then((res) => {
         if (!alive) return;
         setAppliedJobIds(new Set(res.data.map((a) => a.job_id)));
@@ -402,7 +401,7 @@ const markApplied = (jobId: number) => {
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
             <section className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-semibold text-zinc-900">Jobs</h2>
                 {isApplicant && (
                   <div className="flex items-center gap-3">
@@ -415,20 +414,47 @@ const markApplied = (jobId: number) => {
                       aria-checked={hideAppliedJobs}
                       onClick={() => setHideAppliedJobs((v) => !v)}
                       className={[
-                        "relative inline-flex h-7 w-12 items-center rounded-full border transition",
+                        "relative inline-flex h-8 w-14 items-center rounded-full border shadow-sm transition-colors",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30",
                         hideAppliedJobs
-                          ? "border-indigo-500/40 bg-indigo-600"
-                          : "border-zinc-200 bg-zinc-100",
+                          ? "border-emerald-600/40 bg-emerald-600"
+                          : "border-rose-600/40 bg-rose-600",
                       ].join(" ")}
                     >
                       <span
                         className={[
-                          "inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
-                          hideAppliedJobs ? "translate-x-5" : "translate-x-0.5",
+                          "inline-flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm transition-transform",
+                          hideAppliedJobs ? "translate-x-6" : "translate-x-0.5",
                         ].join(" ")}
-                      />
-                      <span className="sr-only">Toggle hide applied jobs</span>
+                      >
+                        {hideAppliedJobs ? (
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="h-4 w-4 text-emerald-700"
+                            aria-hidden="true"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        ) : (
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="h-4 w-4 text-rose-700"
+                            aria-hidden="true"
+                          >
+                            <path d="M18 6 6 18" />
+                            <path d="M6 6l12 12" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="sr-only">
+                        {hideAppliedJobs ? "Hiding applied jobs" : "Showing applied jobs"}
+                      </span>
                     </button>
                   </div>
                 )}
@@ -499,25 +525,14 @@ const markApplied = (jobId: number) => {
                 })}
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <button
-                  onClick={() => goTo(currentPage - 1)}
-                  disabled={prevDisabled}
-                  className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <div className="text-sm text-zinc-600">
-                  Page {currentPage} of {lastPage}
-                </div>
-                <button
-                  onClick={() => goTo(currentPage + 1)}
-                  disabled={nextDisabled}
-                  className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
+              <PaginationControls
+                className="pt-2"
+                currentPage={currentPage}
+                lastPage={lastPage}
+                disabled={loading}
+                onPrev={() => goTo(currentPage - 1)}
+                onNext={() => goTo(currentPage + 1)}
+              />
             </section>
 
             <aside className="space-y-4">

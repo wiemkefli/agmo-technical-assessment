@@ -53,6 +53,11 @@ export interface Application {
   job?: Job;
 }
 
+export interface AppliedJobStatus {
+  job_id: number;
+  status: string;
+}
+
 export interface PaginationMeta {
   current_page: number;
   last_page: number;
