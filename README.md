@@ -94,6 +94,8 @@ cd backend
 composer install
 cp .env.example .env
 php artisan key:generate
+# Create the MySQL database (matches `DB_DATABASE` in `backend/.env.example`)
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS mini_job_board CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 # Update DB_* in backend/.env before migrating (see Backend Setup)
 php artisan migrate --seed
 php artisan serve
@@ -106,6 +108,8 @@ cd backend
 composer install
 Copy-Item .env.example .env
 php artisan key:generate
+# Create the MySQL database (matches `DB_DATABASE` in `backend/.env.example`)
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS mini_job_board CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 # Update DB_* in backend/.env before migrating (see Backend Setup)
 php artisan migrate --seed
 php artisan serve
