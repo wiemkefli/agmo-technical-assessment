@@ -44,7 +44,16 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           const res = await authClient.login({ email, password });
-          set({ user: res.data, token: res.token, role: res.data.role });
+          set({ token: res.token, user: res.data, role: res.data.role });
+
+          // The login response is not guaranteed to include self-only fields (e.g. applicant resume metadata).
+          // Refresh from /auth/me to ensure the store reflects the authenticated user's full shape.
+          try {
+            const me = await authClient.me(res.token);
+            set({ user: me.data, role: me.data.role });
+          } catch {
+            // fall back to login payload if /auth/me fails
+          }
         } catch (e: unknown) {
           const message = getErrorMessage(e, "Login failed");
           set({ error: message });
@@ -58,7 +67,15 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           const res = await authClient.register(payload);
-          set({ user: res.data, token: res.token, role: res.data.role });
+          set({ token: res.token, user: res.data, role: res.data.role });
+
+          // Refresh from /auth/me for self-only fields (e.g. applicant resume metadata).
+          try {
+            const me = await authClient.me(res.token);
+            set({ user: me.data, role: me.data.role });
+          } catch {
+            // fall back to register payload if /auth/me fails
+          }
         } catch (e: unknown) {
           const message = getErrorMessage(e, "Register failed");
           set({ error: message });
