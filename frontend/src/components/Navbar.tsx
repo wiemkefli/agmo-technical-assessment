@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 
 export function Navbar() {
   const router = useRouter();
@@ -20,8 +19,6 @@ export function Navbar() {
 
   const homeHref =
     user && role === "employer" ? "/employer/jobs" : "/jobs";
-
-  useLockBodyScroll(mobileNavOpen);
 
   const handleLogout = async () => {
     setSigningOut(true);
@@ -147,23 +144,6 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen(true)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-zinc-700 ring-1 ring-zinc-200 transition hover:bg-zinc-50 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 md:hidden"
-            aria-label="Open menu"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="h-5 w-5"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
-          </button>
           {!user ? (
             <div className="flex items-center gap-2">
               <Link

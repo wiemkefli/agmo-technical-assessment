@@ -36,7 +36,7 @@ Spec source of truth: `Full Stack Engineer Technical Assessment.md`
 ### Applicant user journey
 
 1. Register / login as an applicant → receives a Sanctum bearer token (`POST /api/auth/register`, `POST /api/auth/login`; `backend/routes/api.php`)
-2. Browse all published jobs on `/jobs` via `GET /api/jobs` (optional UX toggle to hide applied jobs client-side) (`backend/app/Http/Controllers/JobController.php`, `frontend/src/app/jobs/JobsClient.tsx`)
+2. Browse all published jobs on `/jobs` via `GET /api/jobs` (optional UX toggle to hide applied jobs client-side; default is to show all jobs to satisfy spec) (`backend/app/Http/Controllers/JobController.php`, `frontend/src/app/jobs/JobsClient.tsx`)
 3. View a published job detail page (`GET /api/jobs/{job}`; `backend/app/Http/Controllers/JobController.php`, `frontend/src/app/jobs/[id]/page.tsx`)
 4. Apply to a job with a required message and optional PDF resume (upload a file or reuse saved profile resume) (`POST /api/jobs/{job}/apply`; `backend/app/Services/ApplicationService.php`, `backend/app/Http/Requests/ApplicationStoreRequest.php`, `frontend/src/components/ApplicationForm.tsx`)
 5. Save/unsave jobs and view saved/applied history (`/saved-jobs`, `/applied-jobs`; `backend/app/Http/Controllers/SavedJobController.php`, `backend/app/Http/Controllers/ApplicationController.php`)
@@ -46,10 +46,10 @@ Spec source of truth: `Full Stack Engineer Technical Assessment.md`
 
 - Auth: `frontend/src/app/login/page.tsx`, `frontend/src/app/register/page.tsx` → `POST /api/auth/login`, `POST /api/auth/register` (`frontend/src/store/auth.ts`)
 - Applicant:
-  - Job list: `frontend/src/app/jobs/page.tsx`, `frontend/src/app/jobs/JobsClient.tsx` → `GET /api/jobs` (all users); applicants also call `GET /api/saved-jobs/ids`, `GET /api/saved-jobs`, `GET /api/applied-jobs` for save/apply state
+  - Job list: `frontend/src/app/jobs/page.tsx`, `frontend/src/app/jobs/JobsClient.tsx` → `GET /api/jobs` (all users); applicants also call `GET /api/saved-jobs/ids`, `GET /api/saved-jobs`, `GET /api/applied-jobs/ids` for save/apply state
   - Job detail/apply: `frontend/src/app/jobs/[id]/page.tsx` → `GET /api/jobs/{job}`, `POST /api/jobs/{job}/apply`
   - Saved jobs: `frontend/src/app/saved-jobs/page.tsx` → `GET /api/saved-jobs`, `DELETE /api/jobs/{job}/save`
-  - Applied jobs: `frontend/src/app/applied-jobs/page.tsx` → `GET /api/applied-jobs`
+  - Applied jobs: `frontend/src/app/applied-jobs/page.tsx` → `GET /api/applied-jobs?page=...&per_page=...` (paginated)
   - Profile/resume: `frontend/src/app/profile/page.tsx` → `GET|PATCH /api/profile`, `POST|GET|DELETE /api/profile/resume`
 - Employer:
   - Jobs list: `frontend/src/app/employer/jobs/page.tsx` → `GET /api/employer/jobs`, `DELETE /api/employer/jobs/{job}`
@@ -89,7 +89,7 @@ Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 | **Deliverables: root README.md includes setup + stack + migrations/seeds** | FAIL | No root `README.md` in repo root (only `backend/README.md` and `frontend/README.md`, both template/boilerplate) |
 | Deliverables: Postman/Insomnia collection exists | NOT FOUND | Searched for `*.postman_collection.json`, `*.postman_environment.json`, and `insomnia` via `rg` (excluding `backend/vendor` and `frontend/node_modules`): none found |
 | **Bonus: email notifications** | NOT FOUND | Searched backend for `Mail::`, `Notification::`, and `->notify(`: none found |
-| Bonus: pagination in job listings | PASS | Backend uses `paginate()` for `/api/jobs` and `/api/recommended-jobs` and employer lists (`backend/app/Http/Controllers/*`); frontend uses `page/per_page` and renders pagination controls (`frontend/src/app/jobs/JobsClient.tsx`, `frontend/src/app/saved-jobs/page.tsx`) |
+| Bonus: pagination in job listings | PASS | Backend uses `paginate()` for `/api/jobs`, `/api/saved-jobs`, `/api/employer/jobs`, and `/api/applied-jobs` (`backend/app/Http/Controllers/*`); frontend uses a shared `PaginationControls` component (`frontend/src/components/PaginationControls.tsx`) on `/jobs`, `/saved-jobs`, `/employer/jobs`, and `/applied-jobs` |
 | Bonus: resume file upload | PASS | Applicant profile resume upload/download/delete (`backend/app/Http/Controllers/ProfileController.php`); resume on application (`backend/app/Services/ApplicationService.php`); employer can download application resume (`backend/app/Http/Controllers/EmployerApplicationController.php`) |
 | Bonus: unit/feature tests | PASS | Backend feature tests exist and cover auth/roles/ownership/application rules/public contract (`backend/tests/Feature/*`) |
 
