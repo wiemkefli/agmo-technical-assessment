@@ -1,101 +1,128 @@
-# Evaluation Report: agmo-technical-assessment
+# Evaluation Report: `agmo-technical-assessment`
 
-## 1. Repo Summary
+Spec source of truth: `Full Stack Engineer Technical Assessment.md`
 
-- **Stack**
-  - Backend: Laravel **12** + PHP **^8.2** + **Sanctum** token auth (`backend/composer.json:9`, `backend/composer.json:10`, `backend/composer.json:11`)
-  - Frontend: Next.js **16.0.10** + React **19.2.1** + Zustand **5** + Tailwind CSS **4** (`frontend/package.json:12`, `frontend/package.json:13`, `frontend/package.json:15`, `frontend/package.json:24`, `frontend/src/app/globals.css:1`)
+## 1) Repo Summary
+
+- **Stack / Versions**
+  - Backend: Laravel `^12.0` + PHP `^8.2` + Sanctum `^4.2` (`backend/composer.json`)
+  - Frontend: Next.js `16.0.10` + React `19.2.1` + Zustand `^5.0.9` + Tailwind `^4` + TypeScript `^5` (`frontend/package.json`, `frontend/src/app/globals.css`)
+  - DB: MySQL (default config in `backend/.env.example`; DB dump exists: `job_board_application.sql`)
 - **Architecture**
-  - `backend/`: JSON REST API under `/api/*` (`backend/routes/api.php:14`, `backend/routes/api.php:48`)
-  - `frontend/`: Next.js App Router pages in `frontend/src/app/*` calling the API via a fetch wrapper (`frontend/src/lib/api.ts:14`, `frontend/src/lib/api.ts:45`)
-- **How to run locally (NOT documented in repo)**
-  - There is **no root** `README.md` (checked `C:\Projects\agmo-technical-assessment\README.md`).
-  - Inferred minimum:
-    - Backend: configure DB in `backend/.env.example`, run `php artisan migrate --seed`, start `php artisan serve`
-    - Frontend: set `NEXT_PUBLIC_API_BASE_URL` (required by `frontend/src/lib/api.ts:14`) to something like `http://localhost:8000/api`, then `npm run dev`
-- **Key folders/files**
+  - `backend/`: Laravel JSON API under `/api/*` (`backend/routes/api.php`) + Sanctum personal access tokens (bearer auth) (`backend/app/Http/Controllers/AuthController.php`, `backend/config/sanctum.php`)
+  - `frontend/`: Next.js App Router pages in `frontend/src/app/*` calling the API via a shared `fetch` wrapper (`frontend/src/lib/api.ts`) and auth store (`frontend/src/store/auth.ts`)
+- **How to run locally (not documented in a root README)**
+  - Backend:
+    - Env: `backend/.env.example` (note: a committed `backend/.env` exists and contains an `APP_KEY` and DB creds)
+    - Migrate/seed: `php artisan migrate --seed` (seeds demo accounts via `backend/database/seeders/DatabaseSeeder.php`)
+    - Serve: `php artisan serve` (or `composer run dev` per `backend/composer.json` scripts)
+  - Frontend:
+    - Env: `frontend/.env.local` sets `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api`
+    - Run: `npm run dev` (`frontend/package.json`)
+- **Key folders**
   - Spec: `Full Stack Engineer Technical Assessment.md`
-  - Backend routes: `backend/routes/api.php`
-  - Frontend pages: `frontend/src/app/*`
-  - Bonus/features plan doc: `mini_job_board_full_plan_laravel12 (1).md`
-  - DB dump: `job_board_application.sql`
+  - Backend API: `backend/routes/api.php`, controllers in `backend/app/Http/Controllers/`
+  - Frontend pages: `frontend/src/app/`, shared client/store: `frontend/src/lib/api.ts`, `frontend/src/store/auth.ts`
 
-## 2. What the app does (end-to-end)
+## 2) What the app does (end-to-end)
 
-### Employer flow
+### Employer user journey
 
-- Register/login as `employer` (issues Sanctum token) -> redirected to "My Jobs" (`backend/routes/api.php:14`, `backend/app/Http/Controllers/AuthController.php:33`, `frontend/src/app/dashboard/page.tsx`)
-- CRUD own jobs (draft/published) via `/api/employer/jobs*` guarded by role middleware + policies (`backend/routes/api.php:48`, `backend/app/Policies/JobPolicy.php:12`, `backend/app/Policies/JobPolicy.php:17`)
-- View applicants for a job; update application status; download applicant resume if present (`backend/routes/api.php:54`, `backend/routes/api.php:59`, `backend/app/Http/Controllers/EmployerApplicationController.php:17`)
+1. Register / login as an employer → receives a Sanctum bearer token (`POST /api/auth/register`, `POST /api/auth/login`; `backend/app/Http/Controllers/AuthController.php`)
+2. Employer dashboard (“My Jobs”) lists only their jobs (`GET /api/employer/jobs`; `backend/app/Http/Controllers/EmployerJobController.php`)
+3. Create / edit / delete only their own job posts (draft or published) (`POST|PATCH|DELETE /api/employer/jobs/{job}`; protected by `role:employer` and `JobPolicy`; `backend/routes/api.php`, `backend/app/Policies/JobPolicy.php`)
+4. View applicants for their jobs and update application status; download resume if attached (`GET /api/employer/jobs/{job}/applications`, `PATCH /api/employer/applications/{application}`, `GET /api/employer/applications/{application}/resume`; `backend/app/Http/Controllers/EmployerJobController.php`, `backend/app/Http/Controllers/EmployerApplicationController.php`)
 
-### Applicant flow
+### Applicant user journey
 
-- Register/login as `applicant` (Sanctum token) (`backend/routes/api.php:14`, `backend/app/Http/Requests/RegisterRequest.php:23`)
-- Browse published jobs (public); logged-in applicants see “recommended jobs” feed (`backend/app/Http/Controllers/JobController.php:32`, `frontend/src/app/jobs/JobsClient.tsx:147`)
-- View job details and apply with a message + optional resume (upload PDF or use saved profile resume) (`backend/routes/api.php:39`, `backend/app/Http/Requests/ApplicationStoreRequest.php:20`, `frontend/src/app/jobs/[id]/page.tsx`)
-- Manage profile + upload/view/download/delete saved resume (`backend/routes/api.php:24`, `backend/routes/api.php:32`, `frontend/src/app/profile/page.tsx`)
-- Track applied jobs and saved jobs (`backend/routes/api.php:37`, `backend/routes/api.php:42`, `frontend/src/app/applied-jobs/page.tsx`, `frontend/src/app/saved-jobs/page.tsx`)
+1. Register / login as an applicant → receives a Sanctum bearer token (`POST /api/auth/register`, `POST /api/auth/login`; `backend/routes/api.php`)
+2. Browse published jobs; when logged in as applicant, the main list uses a “recommended jobs” feed (`GET /api/jobs` and `GET /api/recommended-jobs`; `backend/app/Http/Controllers/JobController.php`, `backend/app/Http/Controllers/RecommendationController.php`, `frontend/src/app/jobs/JobsClient.tsx`)
+3. View a published job detail page (`GET /api/jobs/{job}`; `backend/app/Http/Controllers/JobController.php`, `frontend/src/app/jobs/[id]/page.tsx`)
+4. Apply to a job with a required message and optional PDF resume (upload a file or reuse saved profile resume) (`POST /api/jobs/{job}/apply`; `backend/app/Services/ApplicationService.php`, `backend/app/Http/Requests/ApplicationStoreRequest.php`, `frontend/src/components/ApplicationForm.tsx`)
+5. Save/unsave jobs and view saved/applied history (`/saved-jobs`, `/applied-jobs`; `backend/app/Http/Controllers/SavedJobController.php`, `backend/app/Http/Controllers/ApplicationController.php`)
+6. Manage profile; applicants can upload/view/download/delete a saved resume (`/profile`; `backend/app/Http/Controllers/ProfileController.php`, `frontend/src/app/profile/page.tsx`)
 
-### Main API endpoints used by the UI
+### Main screens/pages and their API usage
 
-- Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout` (`backend/routes/api.php:14`, `backend/routes/api.php:17`)
-- Public jobs: `GET /api/jobs`, `GET /api/jobs/{job}` (`backend/routes/api.php:27`, `backend/app/Http/Controllers/JobController.php:32`)
-- Applicant-only: `POST /api/jobs/{job}/apply`, `GET /api/applied-jobs`, `GET /api/recommended-jobs`, saved jobs + profile/resume (`backend/routes/api.php:31`, `backend/routes/api.php:39`, `backend/routes/api.php:41`)
-- Employer-only: `/api/employer/jobs*`, `/api/employer/jobs/{job}/applications`, `/api/employer/applications/{application}(/resume)` (`backend/routes/api.php:48`, `backend/routes/api.php:54`, `backend/routes/api.php:56`)
+- Auth: `frontend/src/app/login/page.tsx`, `frontend/src/app/register/page.tsx` → `POST /api/auth/login`, `POST /api/auth/register` (`frontend/src/store/auth.ts`)
+- Applicant:
+  - Job list: `frontend/src/app/jobs/page.tsx`, `frontend/src/app/jobs/JobsClient.tsx` → `GET /api/jobs` or `GET /api/recommended-jobs`, plus `GET /api/saved-jobs/ids`, `GET /api/saved-jobs`, `GET /api/applied-jobs`
+  - Job detail/apply: `frontend/src/app/jobs/[id]/page.tsx` → `GET /api/jobs/{job}`, `POST /api/jobs/{job}/apply`
+  - Saved jobs: `frontend/src/app/saved-jobs/page.tsx` → `GET /api/saved-jobs`, `DELETE /api/jobs/{job}/save`
+  - Applied jobs: `frontend/src/app/applied-jobs/page.tsx` → `GET /api/applied-jobs`
+  - Profile/resume: `frontend/src/app/profile/page.tsx` → `GET|PATCH /api/profile`, `POST|GET|DELETE /api/profile/resume`
+- Employer:
+  - Jobs list: `frontend/src/app/employer/jobs/page.tsx` → `GET /api/employer/jobs`, `DELETE /api/employer/jobs/{job}`
+  - Create: `frontend/src/app/employer/jobs/new/page.tsx` → `POST /api/employer/jobs`
+  - Edit: `frontend/src/app/employer/jobs/[id]/edit/page.tsx` → `GET /api/employer/jobs/{job}`, `PATCH /api/employer/jobs/{job}`
+  - Applicants: `frontend/src/app/employer/jobs/[id]/applications/page.tsx` → `GET /api/employer/jobs/{job}/applications`
 
-## 3. Requirements Checklist (spec: `Full Stack Engineer Technical Assessment.md`)
+## 3) Requirements Checklist
 
 Status values: **PASS / PARTIAL / FAIL / NOT FOUND**
 
 | Requirement | Status | Evidence |
 |---|---:|---|
-| **Backend: REST API exists and returns JSON consistently** | **PASS** | API routes/resources exist (`backend/routes/api.php:14`) and API exception handling is forced to JSON for `/api/*` (`backend/bootstrap/app.php:23`) |
-| Register/Login using email + password | **PASS** | `POST /api/auth/register`, `POST /api/auth/login` (`backend/routes/api.php:14`); token issuance (`backend/app/Http/Controllers/AuthController.php:33`) |
-| Uses Sanctum or Passport (confirm which and how) | **PASS** | Sanctum dependency + `auth:sanctum` middleware (`backend/composer.json:11`, `backend/routes/api.php:17`) |
-| Exactly two roles: employer, applicant | **PASS** | Validation restricts roles (`backend/app/Http/Requests/RegisterRequest.php:23`); users table has `role` (`backend/database/migrations/0001_01_01_000000_create_users_table.php`) |
-| Middleware/guards protect endpoints correctly | **PASS** | Role middleware alias + route groups (`backend/bootstrap/app.php:15`, `backend/routes/api.php:31`, `backend/routes/api.php:48`) |
-| Prevent privilege escalation (employer-only endpoints blocked for applicant) | **PASS** | Role middleware blocks (`backend/app/Http/Middleware/EnsureUserRole.php:16`); job policy enforces ownership (`backend/app/Policies/JobPolicy.php:17`) |
-| Employer can Create/Edit/Delete/View **own** jobs only | **PASS** | Employer jobs filter + policy authorize (`backend/app/Http/Controllers/EmployerJobController.php:41`, `backend/app/Http/Controllers/EmployerJobController.php:72`, `backend/app/Policies/JobPolicy.php:17`) |
-| Applicant can browse all **published** jobs | **PASS** | Jobs index filters `status=published`, show 404s if not published (`backend/app/Http/Controllers/JobController.php:32`, `backend/app/Http/Controllers/JobController.php:53`) |
-| Job fields exist: `title`, `description`, `location`, `salary_range`, `is_remote`, `status` | **PASS** | API exposes `salary_range` in job JSON (`backend/app/Http/Resources/JobResource.php:31`) and accepts `salary_range` on create/update by parsing into `salary_min`/`salary_max` (`backend/app/Http/Requests/JobStoreRequest.php:43`, `backend/app/Http/Requests/JobUpdateRequest.php:43`) |
-| Status/publishing logic implemented correctly | **PASS** | Published-only visibility + `published_at` set/cleared when status changes (`backend/app/Http/Controllers/JobController.php:32`, `backend/app/Services/JobService.php:50`) |
-| Applicant can apply with a short message | **PASS** | Message required + stored (`backend/app/Http/Requests/ApplicationStoreRequest.php:20`, `backend/app/Http/Controllers/ApplicationController.php`) |
-| Employer can view applicants for **their** jobs only | **PASS** | Job policy + employer_id checks for resume/status updates (`backend/app/Http/Controllers/EmployerJobController.php:97`, `backend/app/Http/Controllers/EmployerApplicationController.php:17`) |
-| Proper REST conventions (routes, verbs, status codes) | **PASS** | CRUD uses GET/POST/PATCH/DELETE; create returns 201 (`backend/routes/api.php:48`, `backend/app/Http/Controllers/EmployerJobController.php:67`) |
-| Validation + meaningful error responses | **PASS** | FormRequests + explicit 401 + 422 ValidationException messages (`backend/app/Http/Requests/JobStoreRequest.php`, `backend/app/Http/Controllers/AuthController.php:50`, `backend/app/Services/ApplicationService.php:18`) |
-| Authorization policies/guards used appropriately | **PASS** | JobPolicy + `authorize()` used; role middleware used on groups (`backend/app/Policies/JobPolicy.php:17`, `backend/app/Http/Controllers/EmployerJobController.php:72`, `backend/routes/api.php:48`) |
-| **Frontend: Register/Login pages have client-side validation** | **PASS** | Register validation + password mismatch UI (`frontend/src/app/register/page.tsx:50`, `frontend/src/app/register/page.tsx:160`); login uses required fields (`frontend/src/app/login/page.tsx`) |
-| Frontend integrates correctly with backend auth | **PASS** | Calls `auth/login` and stores `token` (`frontend/src/store/auth.ts:30`, `frontend/src/store/auth.ts:45`) |
-| Dashboard shows different content for employer vs applicant | **PASS** | Role-based redirect and navbar behavior (`frontend/src/app/dashboard/page.tsx`, `frontend/src/components/Navbar.tsx`) |
-| Applicant: browse jobs, view details, apply | **PASS** | Jobs list + detail + apply flow (`frontend/src/app/jobs/JobsClient.tsx`, `frontend/src/app/jobs/[id]/page.tsx`) |
-| Employer: CRUD jobs, view applicants | **PASS** | Employer jobs page + applications modal (`frontend/src/app/employer/jobs/page.tsx:76`, `frontend/src/components/EmployerApplicationsModal.tsx`) |
-| State management uses store/context + auth persisted | **PASS** | Zustand `persist()` to `localStorage` (`frontend/src/store/auth.ts:30`, `frontend/src/store/auth.ts:111`) |
-| API integration (base URL/env, shared client) | **PASS** | `NEXT_PUBLIC_API_BASE_URL` + `Accept: application/json` + bearer header (`frontend/src/lib/api.ts:14`, `frontend/src/lib/api.ts:45`, `frontend/src/lib/api.ts:51`) |
-| UI framework identified and used consistently | **PASS** | Tailwind v4 import and Tailwind usage across components (`frontend/src/app/globals.css:1`) |
-| **Deliverables: root README.md includes backend+frontend setup** | **FAIL** | No root `README.md` present; `backend/README.md` and `frontend/README.md` are boilerplate templates |
-| Deliverables: README includes tech stack summary | **FAIL** | Same as above (no root README) |
-| Deliverables: README includes migrations/seeds instructions | **FAIL** | Same as above (no root README) |
-| Postman/Insomnia collection exists | **NOT FOUND** | Searched repo for `*.postman_collection.json`, `*.postman_environment.json`, `*insomnia*` (excluding `backend/vendor` + `frontend/node_modules`); none found |
-| **Bonus: Email notifications** | **NOT FOUND** | No mail/notification sending logic found (only default `Notifiable` trait reference) |
-| Bonus: Pagination in job listings | **PASS** | Backend uses `paginate()`; frontend supports `page`/`per_page` (`backend/app/Http/Controllers/JobController.php`, `frontend/src/app/jobs/JobsClient.tsx`) |
-| Bonus: Resume file upload | **PASS** | Profile resume endpoints + application resume upload + employer download (`backend/routes/api.php:32`, `backend/app/Services/ApplicationService.php:44`) |
-| Bonus: Unit/feature tests (backend/frontend) | **PASS** | Backend feature tests cover auth/roles, employer ownership, application rules, saved jobs, recommendations, resume flows, and API contract (`backend/tests/Feature/AuthFlowTest.php`, `backend/tests/Feature/EmployerJobAuthorizationTest.php`, `backend/tests/Feature/ApplicantApplicationRulesTest.php`, `backend/tests/Feature/SavedJobsTest.php`, `backend/tests/Feature/RecommendationsTest.php`, `backend/tests/Feature/PublicJobsContractTest.php`) |
+| **Backend: REST API exists and returns JSON consistently** | PASS | Routes under `/api/*` in `backend/routes/api.php`; JSON resources used (`backend/app/Http/Resources/*`); API exceptions forced to JSON in `backend/bootstrap/app.php` (note: resume download endpoints intentionally return a file) |
+| Register/Login using email + password | PASS | `POST /api/auth/register`, `POST /api/auth/login` (`backend/routes/api.php`, `backend/app/Http/Controllers/AuthController.php`, `backend/app/Http/Requests/RegisterRequest.php`, `backend/app/Http/Requests/LoginRequest.php`) |
+| Uses Sanctum or Passport (confirm which and how) | PASS | Sanctum dependency (`backend/composer.json`); routes protected by `auth:sanctum` (`backend/routes/api.php`); tokens created via `createToken()` (`backend/app/Http/Controllers/AuthController.php`) |
+| **Roles: exactly two roles (employer, applicant)** | PASS | Registration restricts `role` to `in:employer,applicant` (`backend/app/Http/Requests/RegisterRequest.php`); frontend typing restricts role union (`frontend/src/lib/types.ts`) |
+| Roles: middleware/guards protect endpoints correctly | PASS | `role` middleware alias (`backend/bootstrap/app.php`) and route groups in `backend/routes/api.php`; middleware returns 401/403 JSON (`backend/app/Http/Middleware/EnsureUserRole.php`) |
+| Roles: prevent privilege escalation (applicant blocked from employer endpoints) | PASS | Employer group uses `role:employer` (`backend/routes/api.php`); policy checks ownership (`backend/app/Policies/JobPolicy.php`); tested in `backend/tests/Feature/EmployerJobAuthorizationTest.php` |
+| **Job Listings: employer can Create/Edit/Delete/View own jobs only** | PASS | Employer endpoints (`backend/routes/api.php` → `EmployerJobController`); `JobPolicy::update/delete/viewApplications` enforce `job.employer_id === user.id` (`backend/app/Policies/JobPolicy.php`) |
+| Job Listings: applicant can browse all published jobs | PARTIAL | API supports full published browse (`GET /api/jobs`; `backend/app/Http/Controllers/JobController.php`), but the applicant UI defaults to `GET /api/recommended-jobs` (excludes saved/applied jobs) with no “view all” toggle (`frontend/src/app/jobs/JobsClient.tsx`) |
+| Job Listings: fields exist (`title`, `description`, `location`, `salary_range`, `is_remote`, `status`) | PASS | Output includes these fields (`backend/app/Http/Resources/JobResource.php`); input accepts `salary_range` (and maps to min/max) (`backend/app/Http/Requests/JobStoreRequest.php`, `backend/app/Http/Requests/JobUpdateRequest.php`) |
+| Job Listings: status/publishing logic correct | PASS | Publishing sets/clears `published_at` when status changes (`backend/app/Services/JobService.php`); public list sorted by `published_at` (`backend/app/Http/Controllers/JobController.php`) |
+| **Job Applications: applicant can apply with a short message** | PASS | `POST /api/jobs/{job}/apply` (`backend/routes/api.php`); `message` required (`backend/app/Http/Requests/ApplicationStoreRequest.php`); create enforces published + unique (`backend/app/Services/ApplicationService.php`) |
+| Job Applications: employer can view applicants for their jobs only | PASS | `GET /api/employer/jobs/{job}/applications` guarded by `JobPolicy::viewApplications` (`backend/app/Http/Controllers/EmployerJobController.php`, `backend/app/Policies/JobPolicy.php`) |
+| **API standards: proper REST conventions** | PASS | Uses `GET/POST/PATCH/DELETE` on resources (`backend/routes/api.php`); create endpoints set 201 (`backend/app/Http/Controllers/AuthController.php`, `backend/app/Http/Controllers/EmployerJobController.php`, `backend/app/Http/Controllers/ApplicationController.php`) |
+| API standards: validation + meaningful errors | PASS | FormRequests for auth/jobs/applications/profile (`backend/app/Http/Requests/*`); invalid login returns 401 JSON (`backend/app/Http/Controllers/AuthController.php`) |
+| API standards: authorization policies/guards used appropriately | PASS | Policies registered in `backend/app/Providers/AuthServiceProvider.php`; controllers call `$this->authorize()` (`backend/app/Http/Controllers/EmployerJobController.php`) |
+| **Frontend: Register/Login pages with client-side validation** | PASS | Register validates required fields/password match (`frontend/src/app/register/page.tsx`); login uses required inputs (`frontend/src/app/login/page.tsx`) |
+| Frontend: correct integration with backend auth | PASS | Calls `/api/auth/*` and stores bearer token in Zustand (`frontend/src/store/auth.ts`) |
+| Frontend: dashboard differs by role | PASS | Redirects employers to `/employer/jobs` and applicants to `/jobs` (`frontend/src/app/dashboard/page.tsx`, `frontend/src/components/Navbar.tsx`) |
+| Frontend: applicant browse jobs, view details, apply | PASS | `/jobs`, `/jobs/[id]` + apply form (`frontend/src/app/jobs/JobsClient.tsx`, `frontend/src/app/jobs/[id]/page.tsx`, `frontend/src/components/ApplicationForm.tsx`) |
+| Frontend: employer CRUD jobs, view applicants | PASS | `/employer/jobs*` pages + applicants table/modal (`frontend/src/app/employer/jobs/*`, `frontend/src/components/ApplicantsTable.tsx`) |
+| Frontend: state management store + auth persistence | PASS | Zustand `persist()` stores `token/user/role` to `localStorage` (`frontend/src/store/auth.ts`) |
+| Frontend: API integration (base URL/env, shared client) | PASS | `NEXT_PUBLIC_API_BASE_URL` + shared `apiRequest()` wrapper adds `Accept: application/json` and `Authorization: Bearer ...` (`frontend/src/lib/api.ts`, `frontend/.env.local`) |
+| Frontend: UI framework consistent usage | PASS | Tailwind CSS v4 + Tailwind utility classes across components (`frontend/src/app/globals.css`, `frontend/src/components/*`) |
+| **Deliverables: root README.md includes setup + stack + migrations/seeds** | FAIL | No root `README.md` in repo root (only `backend/README.md` and `frontend/README.md`, both template/boilerplate) |
+| Deliverables: Postman/Insomnia collection exists | NOT FOUND | Searched for `*.postman_collection.json`, `*.postman_environment.json`, and `insomnia` via `rg` (excluding `backend/vendor` and `frontend/node_modules`): none found |
+| **Bonus: email notifications** | NOT FOUND | Searched backend for `Mail::`, `Notification::`, and `->notify(`: none found |
+| Bonus: pagination in job listings | PASS | Backend uses `paginate()` for `/api/jobs` and `/api/recommended-jobs` and employer lists (`backend/app/Http/Controllers/*`); frontend uses `page/per_page` and renders pagination controls (`frontend/src/app/jobs/JobsClient.tsx`, `frontend/src/app/saved-jobs/page.tsx`) |
+| Bonus: resume file upload | PASS | Applicant profile resume upload/download/delete (`backend/app/Http/Controllers/ProfileController.php`); resume on application (`backend/app/Services/ApplicationService.php`); employer can download application resume (`backend/app/Http/Controllers/EmployerApplicationController.php`) |
+| Bonus: unit/feature tests | PASS | Backend feature tests exist and cover auth/roles/ownership/application rules/public contract (`backend/tests/Feature/*`) |
 
-## 4. Top Issues (highest impact first)
+## 4) Top Issues (highest impact first)
 
-### 4.1 Missing required deliverables (README + Postman/Insomnia collection)
+1. **Missing required deliverables (root README + Postman/Insomnia collection)**
+   - Symptom: no root `README.md`; no API collection files found.
+   - Why it fails spec: deliverables explicitly required in `Full Stack Engineer Technical Assessment.md`.
+   - Where to fix: add `README.md` at repo root; add a `postman/` (or Insomnia export) directory.
+   - Suggested fix: document env vars (`backend/.env.example`, `frontend/.env.local`), migrations/seeds (`php artisan migrate --seed`), and include requests for all endpoints in `backend/routes/api.php`.
 
-- **Symptom**: No root `README.md`; no API collection files
-- **Why it fails spec**: Deliverables explicitly required
-- **Where to fix**: add `README.md` at repo root; add `postman/*.postman_collection.json`
-- **Suggested fix**: document env vars (`NEXT_PUBLIC_API_BASE_URL`, DB), migrations/seeds (`php artisan migrate --seed`), and include a ready-to-run Postman collection for all `/api/*` routes
+2. **Committed backend secrets/config (`backend/.env`)**
+   - Symptom: `backend/.env` contains an `APP_KEY` and DB password.
+   - Why it matters: secrets should not be committed; encourages unsafe practices and can leak credentials.
+   - Where to fix: remove `backend/.env` from version control; rely on `backend/.env.example`.
+   - Suggested fix: add `backend/.env` to `.gitignore` and rotate/regenerate `APP_KEY` on real deployments.
 
-## 5. Nice-to-have improvements
+3. **Applicant job board is “recommended” only**
+   - Symptom: when authenticated as `applicant`, `/jobs` uses `GET /api/recommended-jobs` instead of `GET /api/jobs`.
+   - Why it fails spec: the requirement is to browse all published jobs; recommendations exclude saved/applied jobs and can hide published listings.
+   - Where to fix: `frontend/src/app/jobs/JobsClient.tsx` (endpoint selection).
+   - Suggested fix: add an explicit “All jobs / Recommended” toggle, default to “All jobs”, and keep recommendations as an optional view.
 
-- Consider storing auth tokens in more secure mechanisms depending on threat model (localStorage is XSS-sensitive)
+## 5) Nice-to-have improvements
 
-## 6. Final verdict
+- Security sanity checks (confirmed): bearer-token auth (no cookie/CSRF flow), CORS allows `http://localhost:3000` only (`backend/config/cors.php`), applicant blocked from employer routes (`backend/routes/api.php`, `backend/app/Http/Middleware/EnsureUserRole.php`, `backend/tests/Feature/EmployerJobAuthorizationTest.php`), employer ownership enforced (jobs via `backend/app/Policies/JobPolicy.php`; application resume/status via `backend/app/Http/Controllers/EmployerApplicationController.php`), validation blocks invalid payloads (`backend/app/Http/Requests/*`), public job feed omits employer email (`backend/app/Http/Resources/PublicEmployerResource.php`, `backend/tests/Feature/PublicJobsContractTest.php`).
+- Consider mitigating XSS impact from token-in-`localStorage` (e.g., tighter CSP, harden input rendering, or a cookie-based SPA auth model).
+- CORS is pinned to `http://localhost:3000` (`backend/config/cors.php`); make this configurable for deployment.
+
+## 6) Final verdict
 
 **Does not meet spec**
 
-- Missing required deliverables: no root `README.md`, no Postman/Insomnia collection
+- Required deliverables are missing: no root `README.md`, and no Postman/Insomnia collection.
+- Core backend/frontend features (auth, roles, job CRUD, applications) are implemented and well-protected, but the submission is incomplete per deliverables.
+

@@ -194,6 +194,15 @@ export function Navbar() {
                       Profile
                     </Link>
                     {role === "applicant" && (
+                      <Link
+                        href="/jobs"
+                        onClick={() => setMenuOpen(false)}
+                        className="block px-3 py-2 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
+                      >
+                        Job search
+                      </Link>
+                    )}
+                    {role === "applicant" && (
                       <>
                         <Link
                           href="/saved-jobs"
